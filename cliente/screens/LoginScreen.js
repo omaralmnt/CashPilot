@@ -7,16 +7,19 @@ import {
   TouchableOpacity,
   Alert,
   StatusBar,
-  KeyboardAvoidingView,
   Platform,
+  KeyboardAvoidingView,
   ScrollView,
-  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as LocalAuthentication from 'expo-local-authentication';
+import Constants from 'expo-constants';
 
-const { height } = Dimensions.get('window');
+// Configuración del backend
+const API_BASE_URL = 'http://192.168.100.20:4000'; // Cambia esta IP por la de tu servidor
+// Si estás usando localhost en el emulador de Android, usa: http://10.0.2.2:4000
+// Si estás usando el simulador de iOS o Expo Go, usa la IP de tu máquina
 
 const LoginScreen = ({ navigation }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -30,26 +33,17 @@ const LoginScreen = ({ navigation }) => {
   const [hasStoredCredentials, setHasStoredCredentials] = useState(false);
 
   useEffect(() => {
-    checkBiometricAvailability();
+    checkBiometricSupport();
     checkStoredCredentials();
   }, []);
 
-  const checkBiometricAvailability = async () => {
+  const checkBiometricSupport = async () => {
     try {
-      const isAvailable = await LocalAuthentication.hasHardwareAsync();
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-      const supportedTypes = await LocalAuthentication.supportedAuthenticationTypesAsync();
-      
-      console.log('Biometric Info:', {
-        isAvailable,
-        isEnrolled,
-        supportedTypes,
-        hasStoredCredentials
-      });
-      
-      setBiometricAvailable(isAvailable && isEnrolled);
+      setBiometricAvailable(hasHardware && isEnrolled);
     } catch (error) {
-      console.log('Error checking biometric availability:', error);
+      console.log('Error checking biometric support:', error);
     }
   };
 
@@ -68,6 +62,8 @@ const LoginScreen = ({ navigation }) => {
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
       
+      console.log('Biometric debug:', { supportedTypes, hasHardware, isEnrolled });
+      
       if (!hasHardware) {
         Alert.alert('No disponible', 'Tu dispositivo no soporta autenticación biométrica');
         return;
@@ -78,31 +74,52 @@ const LoginScreen = ({ navigation }) => {
         return;
       }
 
+      // Configuración simplificada para Expo Go
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Autenticar para acceder a CashPilot',
+        promptMessage: 'Autenticar para acceder',
         cancelLabel: 'Cancelar',
-        fallbackLabel: 'Usar contraseña',
+        fallbackLabel: 'Usar código',
         requireConfirmation: false,
-        disableDeviceFallback: false,
+        disableDeviceFallback: false, // Permite fallback a código si Face ID falla
       });
 
-      console.log('Biometric result:', result);
+      console.log('Authentication result:', result);
 
       if (result.success) {
+        // Si hay warning sobre Face ID en Expo Go, simplemente continuar
+        if (result.warning) {
+          console.log('Face ID warning (normal en Expo Go):', result.warning);
+        }
+        
         const storedUser = await AsyncStorage.getItem('currentUser');
         if (storedUser) {
-          const userData = JSON.parse(storedUser);
           navigation.replace('MainTabs');
         } else {
           Alert.alert('Error', 'No hay usuario registrado para autenticación biométrica');
         }
       } else if (result.error) {
-        console.log('Biometric error:', result.error);
-        Alert.alert('Error', `Error de autenticación: ${result.error}`);
+        console.log('Biometric error details:', result.error);
+        
+        // Manejar diferentes tipos de errores
+        if (result.error === 'UserCancel') {
+          // Usuario canceló - no hacer nada
+          return;
+        } else if (result.error === 'UserFallback') {
+          // Usuario eligió usar código - esto es normal
+          Alert.alert('Info', 'Usaste el código de acceso como alternativa');
+          return;
+        } else if (result.error === 'BiometricUnavailable') {
+          Alert.alert('No disponible', 'La autenticación biométrica no está disponible. Usa el código de acceso.');
+        } else if (result.error === 'NotEnrolled') {
+          Alert.alert('No configurado', 'La autenticación biométrica no está configurada.');
+        } else {
+          // Para cualquier otro error, permitir usar código
+          Alert.alert('Info', 'Face ID no disponible, puedes usar el código de acceso');
+        }
       }
     } catch (error) {
       console.log('Biometric catch error:', error);
-      Alert.alert('Error', 'No se pudo completar la autenticación biométrica');
+      Alert.alert('Info', 'Usa el código de acceso para continuar');
     }
   };
 
@@ -135,42 +152,68 @@ const LoginScreen = ({ navigation }) => {
     return true;
   };
 
+  // Nueva función para hacer login con el backend
   const handleLogin = async () => {
     if (!validateInput()) return;
 
     setLoading(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const users = await AsyncStorage.getItem('users');
-      const userList = users ? JSON.parse(users) : [];
-      
-      const user = userList.find(u => u.username === username && u.password === password);
-      
-      if (user) {
-        await AsyncStorage.setItem('currentUser', JSON.stringify(user));
+      const response = await fetch(`${API_BASE_URL}/api/usuario/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: username.trim(),
+          password: password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Login exitoso - guardar token y datos del usuario
+        const userData = {
+          token: data.token,
+          username: username.trim(),
+          loginTime: new Date().toISOString(),
+        };
+
+        await AsyncStorage.setItem('userToken', data.token);
+        await AsyncStorage.setItem('currentUser', JSON.stringify(userData));
         
         // Activar biométrico automáticamente para futuros logins
         setHasStoredCredentials(true);
         
-        navigation.replace('MainTabs');
+        Alert.alert(
+          'Éxito', 
+          'Inicio de sesión exitoso',
+          [{ text: 'OK', onPress: () => navigation.replace('MainTabs') }]
+        );
       } else {
-        Alert.alert('Error', 'Usuario o contraseña incorrectos');
+        // Error en las credenciales
+        Alert.alert('Error', data.error || 'Credenciales inválidas');
       }
     } catch (error) {
-      Alert.alert('Error', 'Ocurrió un error al iniciar sesión');
+      console.error('Error de conexión:', error);
+      Alert.alert(
+        'Error de conexión', 
+        'No se pudo conectar al servidor. Verifica tu conexión a internet y que el servidor esté funcionando.'
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  // Función de registro (mantener la lógica local por ahora)
   const handleRegister = async () => {
     if (!validateInput()) return;
 
     setLoading(true);
     
     try {
+      // Simulación de delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const users = await AsyncStorage.getItem('users');
@@ -190,6 +233,7 @@ const LoginScreen = ({ navigation }) => {
         createdAt: new Date().toISOString(),
       };
       
+      userList.push(newUser);
       await AsyncStorage.setItem('users', JSON.stringify(userList));
       await AsyncStorage.setItem('currentUser', JSON.stringify(newUser));
       
@@ -350,7 +394,7 @@ const LoginScreen = ({ navigation }) => {
                 >
                   <Ionicons name="finger-print" size={24} color="#667eea" />
                   <Text style={styles.biometricButtonText}>
-                    Usar {Platform.OS === 'ios' ? 'Face ID / Touch ID' : 'Huella Digital'}
+                    Usar autenticación biométrica
                   </Text>
                 </TouchableOpacity>
               )}
@@ -414,33 +458,35 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 30,
   },
   formContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 30,
-    paddingBottom: 20,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
   },
   toggleContainer: {
     flexDirection: 'row',
-    backgroundColor: '#E8E8E8',
+    backgroundColor: '#F5F6FA',
     borderRadius: 12,
-    padding: 3,
-    marginBottom: 30,
+    padding: 4,
+    marginBottom: 24,
   },
   toggleButton: {
     flex: 1,
-    alignItems: 'center',
     paddingVertical: 12,
-    borderRadius: 9,
+    alignItems: 'center',
+    borderRadius: 8,
   },
   toggleButtonActive: {
-    backgroundColor: 'white',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: '#667eea',
   },
   toggleButtonText: {
     fontSize: 16,
@@ -448,26 +494,21 @@ const styles = StyleSheet.create({
     color: '#7F8C8D',
   },
   toggleButtonTextActive: {
-    color: '#2C3E50',
+    color: 'white',
   },
   inputSection: {
-    marginBottom: 30,
+    marginBottom: 24,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: '#F8F9FA',
     borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    paddingHorizontal: 16,
+    height: 56,
     borderWidth: 1,
-    borderColor: '#F0F0F0',
+    borderColor: '#E8E8E8',
   },
   inputIcon: {
     marginRight: 12,
@@ -476,20 +517,20 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: '#2C3E50',
-    fontWeight: '500',
+    height: '100%',
   },
   eyeIcon: {
     padding: 4,
   },
   actionSection: {
-    marginTop: 10,
+    gap: 16,
   },
   submitButton: {
     backgroundColor: '#667eea',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
-    marginBottom: 16,
+    justifyContent: 'center',
     shadowColor: '#667eea',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -502,39 +543,34 @@ const styles = StyleSheet.create({
     elevation: 0,
   },
   submitButtonText: {
+    color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
-    color: 'white',
   },
   biometricButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'white',
+    backgroundColor: '#F8F9FA',
     borderRadius: 12,
     paddingVertical: 16,
-    marginBottom: 16,
-    borderWidth: 2,
+    paddingHorizontal: 20,
+    borderWidth: 1,
     borderColor: '#667eea',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    gap: 8,
   },
   biometricButtonText: {
+    color: '#667eea',
     fontSize: 16,
     fontWeight: '600',
-    color: '#667eea',
-    marginLeft: 8,
   },
   forgotPasswordButton: {
     alignItems: 'center',
     paddingVertical: 12,
   },
   forgotPasswordText: {
-    fontSize: 16,
     color: '#667eea',
+    fontSize: 16,
     fontWeight: '500',
   },
 });
