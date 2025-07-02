@@ -4,14 +4,13 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet } from 'react-native';
 
-// Screens
-import LoginScreen from './screens/LoginScreen';
-
+// Screens - Corregidas las rutas de importación
+import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
 import TransactionsScreen from '../screens/TransactionsScreen';
 import BudgetScreen from '../screens/BudgetScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import AddTransactionScreen from '../screens/AddTransactionScreen'; // Importa tu nueva pantalla
+import AddTransactionScreen from '../screens/AddTransactionScreen';
 import WalletsScreen from '../screens/WalletsScreen';
 
 // Pantallas temporales
