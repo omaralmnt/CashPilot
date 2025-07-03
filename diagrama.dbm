@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+CAUTION: Do not modify this file unless you know what you are doing.
+ Unexpected results may occur if the code is changed deliberately.
+-->
+<dbmodel pgmodeler-ver="1.1.4" use-changelog="false" max-obj-count="10"
+	 last-position="0,185" last-zoom="1"
+	 default-schema="public" default-owner="postgres"
+	 layers="Default layer"
+	 active-layers="0"
+	 layer-name-colors="#000000"
+	 layer-rect-colors="#b4b4b4"
+	 show-layer-names="false" show-layer-rects="false">
+<database name="new_database" is-template="false" allow-conns="true">
+</database>
+
+<schema name="public" layers="0" fill-color="#e1e1e1" name-color="#000000" sql-disabled="true">
+</schema>
+
+<table name="usuario" layers="0" collapse-mode="2" max-obj-count="4" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<position x="840" y="840"/>
+	<column name="id_usuario" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="nombre" not-null="true">
+		<type name="varchar" length="0"/>
+	</column>
+	<column name="username" not-null="true">
+		<type name="varchar" length="0"/>
+	</column>
+	<column name="password" not-null="true">
+		<type name="varchar" length="0"/>
+	</column>
+	<constraint name="usuario_pk" type="pk-constr" table="public.usuario">
+		<columns names="id_usuario" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<table name="cuenta" layers="0" collapse-mode="2" max-obj-count="12" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<position x="540" y="340"/>
+	<column name="id_cuenta" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="descripcion" not-null="true">
+		<type name="varchar" length="0"/>
+	</column>
+	<column name="numero">
+		<type name="varchar" length="0"/>
+	</column>
+	<column name="saldo">
+		<type name="numeric" length="0"/>
+	</column>
+	<column name="nota">
+		<type name="text" length="0"/>
+	</column>
+	<column name="positivo" default-value="TRUE">
+		<type name="boolean" length="0"/>
+	</column>
+	<constraint name="cuenta_pk" type="pk-constr" table="public.cuenta">
+		<columns names="id_cuenta" ref-type="src-columns"/>
+	</constraint>
+
+	<customidxs object-type="column">
+		<object name="id_banco" index="6"/>
+		<object name="id_color" index="8"/>
+		<object name="id_tipo_cuenta" index="7"/>
+		<object name="id_usuario" index="9"/>
+	</customidxs>
+	<customidxs object-type="constraint">
+		<object name="banco_fk" index="1"/>
+		<object name="color_fk" index="2"/>
+		<object name="tipo_cuenta_fk" index="3"/>
+		<object name="usuario_fk" index="4"/>
+	</customidxs></table>
+
+<table name="color" layers="0" collapse-mode="2" max-obj-count="2" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<position x="160" y="260"/>
+	<column name="id_color" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="descripcion" not-null="true">
+		<type name="varchar" length="0"/>
+	</column>
+	<constraint name="color_pk" type="pk-constr" table="public.color">
+		<columns names="id_color" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<table name="banco" layers="0" collapse-mode="2" max-obj-count="2" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<position x="460" y="60"/>
+	<column name="id_banco" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="descripcion" not-null="true">
+		<type name="varchar" length="0"/>
+	</column>
+	<constraint name="banco_pk" type="pk-constr" table="public.banco">
+		<columns names="id_banco" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<relationship name="banco_has_many_cuenta" type="rel1n" layers="0"
+	 src-col-pattern="{sc}"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="{st}_fk"
+	 custom-color="#daf5a1"
+	 src-table="public.banco"
+	 dst-table="public.cuenta"
+	 src-required="true" dst-required="false"/>
+
+<relationship name="color_has_many_cuenta" type="rel1n" layers="0"
+	 src-col-pattern="{sc}"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="{st}_fk"
+	 custom-color="#6f522b"
+	 src-table="public.color"
+	 dst-table="public.cuenta"
+	 src-required="true" dst-required="false"/>
+
+<table name="tipo_cuenta" layers="0" collapse-mode="2" max-obj-count="2" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<position x="720" y="140"/>
+	<column name="id_tipo_cuenta" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="descripcion" not-null="true">
+		<type name="varchar" length="0"/>
+	</column>
+	<constraint name="tipo_cuenta_pk" type="pk-constr" table="public.tipo_cuenta">
+		<columns names="id_tipo_cuenta" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<relationship name="tipo_cuenta_has_many_cuenta" type="rel1n" layers="0"
+	 src-col-pattern="{sc}"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="{st}_fk"
+	 custom-color="#ffba51"
+	 src-table="public.tipo_cuenta"
+	 dst-table="public.cuenta"
+	 src-required="true" dst-required="false"/>
+
+<relationship name="usuario_has_many_cuenta" type="rel1n" layers="0"
+	 src-col-pattern="{sc}"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="{st}_fk"
+	 custom-color="#636eb6"
+	 src-table="public.usuario"
+	 dst-table="public.cuenta"
+	 src-required="true" dst-required="false"/>
+
+<table name="transferencia" layers="0" collapse-mode="2" max-obj-count="8" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<position x="919" y="446"/>
+	<column name="id_transferencia" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="monto" not-null="true">
+		<type name="numeric" length="0"/>
+	</column>
+	<column name="fecha_hora" default-value="CURRENT_TIMESTAMP">
+		<type name="timestamp" length="0"/>
+	</column>
+	<column name="concepto">
+		<type name="varchar" length="0"/>
+	</column>
+	<constraint name="transferencia_pk" type="pk-constr" table="public.transferencia">
+		<columns names="id_transferencia" ref-type="src-columns"/>
+	</constraint>
+
+	<customidxs object-type="column">
+		<object name="id_cuenta_destino" index="5"/>
+		<object name="id_cuenta_origen" index="4"/>
+	</customidxs>
+	<customidxs object-type="constraint">
+		<object name="cuenta_fk" index="1"/>
+		<object name="cuenta_fk1" index="2"/>
+	</customidxs></table>
+
+<relationship name="cuenta_has_many_transferencia" type="rel1n" layers="0"
+	 src-col-pattern="{sc}_origen"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="{st}_fk"
+	 custom-color="#9cb559"
+	 src-table="public.cuenta"
+	 dst-table="public.transferencia"
+	 src-required="true" dst-required="false"/>
+
+<relationship name="cuenta_has_many_transferencia2" type="rel1n" layers="0"
+	 src-col-pattern="{sc}_destino"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="{st}_fk"
+	 custom-color="#0f02b4"
+	 src-table="public.cuenta"
+	 dst-table="public.transferencia"
+	 src-required="true" dst-required="false"/>
+
+<table name="transaccion" layers="0" collapse-mode="2" max-obj-count="9" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<position x="320" y="760"/>
+	<column name="id_transaccion" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="tipo" not-null="true">
+		<type name="integer" length="0"/>
+		<comment> <![CDATA[1 es gasto y 2 ingreso]]> </comment>
+	</column>
+	<column name="monto" not-null="true">
+		<type name="numeric" length="0"/>
+	</column>
+	<column name="concepto" not-null="true">
+		<type name="varchar" length="0"/>
+	</column>
+	<column name="fecha_hora" not-null="true">
+		<type name="timestamp" length="0"/>
+	</column>
+	<column name="nota">
+		<type name="text" length="0"/>
+	</column>
+	<constraint name="transaccion_pk" type="pk-constr" table="public.transaccion">
+		<columns names="id_transaccion" ref-type="src-columns"/>
+	</constraint>
+
+	<customidxs object-type="column">
+		<object name="id_categoria" index="7"/>
+		<object name="id_usuario" index="1"/>
+	</customidxs>
+	<customidxs object-type="constraint">
+		<object name="categoria_fk" index="2"/>
+		<object name="usuario_fk" index="1"/>
+	</customidxs></table>
+
+<relationship name="usuario_has_many_transferencia" type="rel1n" layers="0"
+	 src-col-pattern="{sc}"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="{st}_fk"
+	 custom-color="#093aa2"
+	 src-table="public.usuario"
+	 dst-table="public.transferencia"
+	 src-required="true" dst-required="false"/>
+
+<relationship name="usuario_has_many_transaccion" type="rel1n" layers="0"
+	 src-col-pattern="{sc}"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="{st}_fk"
+	 custom-color="#c02220"
+	 src-table="public.usuario"
+	 dst-table="public.transaccion"
+	 src-required="true" dst-required="false"/>
+
+<table name="categoria" layers="0" collapse-mode="2" max-obj-count="2" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<position x="80" y="600"/>
+	<column name="id_categoria" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="descripcion" not-null="true">
+		<type name="varchar" length="0"/>
+	</column>
+	<constraint name="categoria_pk" type="pk-constr" table="public.categoria">
+		<columns names="id_categoria" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<relationship name="categoria_has_many_transaccion" type="rel1n" layers="0"
+	 src-col-pattern="{sc}"
+	 pk-pattern="{dt}_pk" uq-pattern="{dt}_uq"
+	 src-fk-pattern="{st}_fk"
+	 custom-color="#bd5b2c"
+	 src-table="public.categoria"
+	 dst-table="public.transaccion"
+	 src-required="true" dst-required="false"/>
+
+</dbmodel>

@@ -3,131 +3,123 @@ import {
   View,
   Text,
   StyleSheet,
+  ScrollView,
   TextInput,
   TouchableOpacity,
-  StatusBar,
   Alert,
-  ScrollView,
-  Switch,
+  StatusBar,
+  Platform,
+  KeyboardAvoidingView,
+  SafeAreaView,
   Modal,
+  Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
 
-const EditAccountScreen = () => {
-  const navigation = useNavigation();
-  const route = useRoute();
-  const { account } = route.params || {};
+const EditAccountScreen = ({ navigation, route }) => {
+  // Obtener datos de la cuenta desde route.params o usar datos de ejemplo
+  const accountData = route?.params?.account || {
+    id: 1,
+    name: 'BBVA Bancomer',
+    type: 'bank',
+    accountType: 'Cuenta de Débito',
+    balance: 15750.50,
+    accountNumber: '1234567890',
+    color: '#004481',
+    icon: 'business',
+    isActive: true,
+    bank: 'BBVA',
+    description: 'Cuenta principal de nómina',
+    currency: 'MXN',
+    includeInTotal: true,
+  };
 
-  // Estados para el formulario
-  const [accountName, setAccountName] = useState(account?.name || '');
-  const [accountType, setAccountType] = useState(account?.type || 'bank');
-  const [accountNumber, setAccountNumber] = useState(account?.accountNumber || '');
-  const [initialBalance, setInitialBalance] = useState(account?.balance?.toString() || '0');
-  const [creditLimit, setCreditLimit] = useState(account?.creditLimit?.toString() || '0');
-  const [accountColor, setAccountColor] = useState(account?.color || '#3498DB');
-  const [isActive, setIsActive] = useState(account?.isActive ?? true);
-  const [showColorPicker, setShowColorPicker] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [formData, setFormData] = useState({
+    name: accountData.name,
+    accountNumber: accountData.accountNumber,
+    balance: accountData.balance.toString(),
+    description: accountData.description || '',
+    bank: accountData.bank || '',
+    isActive: accountData.isActive,
+    includeInTotal: accountData.includeInTotal,
+    color: accountData.color,
+    type: accountData.type,
+    creditLimit: accountData.creditLimit?.toString() || '',
+  });
 
-  // Tipos de cuenta disponibles
-  const accountTypes = [
-    { type: 'bank', name: 'Cuenta Bancaria', icon: 'business' },
-    { type: 'credit', name: 'Tarjeta de Crédito', icon: 'card' },
-    { type: 'cash', name: 'Efectivo', icon: 'cash' },
-    { type: 'digital', name: 'Monedero Digital', icon: 'phone-portrait' },
-    { type: 'investment', name: 'Inversiones', icon: 'trending-up' },
-  ];
+  const [loading, setLoading] = useState(false);
+  const [showColorModal, setShowColorModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  // Colores disponibles
+  const accountTypes = {
+    bank: { name: 'Cuenta Bancaria', icon: 'business' },
+    credit: { name: 'Tarjeta de Crédito', icon: 'card' },
+    cash: { name: 'Efectivo', icon: 'cash' },
+    digital: { name: 'Monedero Digital', icon: 'phone-portrait' },
+    investment: { name: 'Inversiones', icon: 'trending-up' },
+  };
+
   const colorOptions = [
-    '#3498DB', '#E74C3C', '#2ECC71', '#F39C12', '#9B59B6',
-    '#1ABC9C', '#E67E22', '#34495E', '#E91E63', '#8E24AA',
-    '#607D8B', '#795548', '#FF5722', '#009688', '#4CAF50'
+    '#004481', '#E31837', '#27AE60', '#EC0000', '#003087',
+    '#3498DB', '#E74C3C', '#F39C12', '#9B59B6', '#1ABC9C',
+    '#34495E', '#16A085', '#2ECC71', '#F1C40F', '#E67E22',
   ];
 
   const formatCurrency = (amount) => {
-    return `$${Math.abs(amount).toLocaleString('es-MX', { 
+    const num = parseFloat(amount) || 0;
+    return `$${Math.abs(num).toLocaleString('es-MX', { 
       minimumFractionDigits: 2,
       maximumFractionDigits: 2 
     })}`;
   };
 
-  const getAccountTypeIcon = (type) => {
-    const typeData = accountTypes.find(t => t.type === type);
-    return typeData ? typeData.icon : 'wallet';
-  };
-
-  const getAccountTypeName = (type) => {
-    const typeData = accountTypes.find(t => t.type === type);
-    return typeData ? typeData.name : 'Cuenta';
-  };
-
-  const formatAmount = (text) => {
-    // Remover caracteres no numéricos excepto punto y signo menos
-    const cleaned = text.replace(/[^0-9.-]/g, '');
-    
-    // Evitar múltiples puntos
-    const parts = cleaned.split('.');
-    if (parts.length > 2) {
-      return parts[0] + '.' + parts.slice(1).join('');
-    }
-    
-    return cleaned;
-  };
-
-  const handleSave = () => {
-    if (!accountName.trim()) {
-      Alert.alert('Error', 'Por favor ingresa un nombre para la cuenta');
+  const handleSave = async () => {
+    // Validaciones
+    if (!formData.name.trim()) {
+      Alert.alert('Error', 'El nombre de la cuenta es obligatorio');
       return;
     }
 
-    if (accountType === 'credit' && (!creditLimit || parseFloat(creditLimit) <= 0)) {
-      Alert.alert('Error', 'Por favor ingresa un límite de crédito válido');
+    if (!formData.balance.trim()) {
+      Alert.alert('Error', 'El saldo es obligatorio');
       return;
     }
 
-    const updatedAccount = {
-      ...account,
-      name: accountName.trim(),
-      type: accountType,
-      accountNumber: accountNumber.trim(),
-      balance: parseFloat(initialBalance) || 0,
-      creditLimit: accountType === 'credit' ? (parseFloat(creditLimit) || 0) : undefined,
-      color: accountColor,
-      isActive: isActive,
-      accountType: getAccountTypeName(accountType),
-      icon: getAccountTypeIcon(accountType),
-    };
+    if (formData.type === 'credit' && !formData.creditLimit.trim()) {
+      Alert.alert('Error', 'El límite de crédito es obligatorio para tarjetas de crédito');
+      return;
+    }
 
-    // Aquí normalmente guardarías en tu estado global o API
-    console.log('Cuenta actualizada:', updatedAccount);
-    
-    Alert.alert(
-      'Éxito',
-      'La cuenta ha sido actualizada correctamente',
-      [
-        {
-          text: 'OK',
-          onPress: () => navigation.goBack()
-        }
-      ]
-    );
+    setLoading(true);
+    try {
+      // Aquí iría tu lógica para guardar los datos
+      // Ejemplo: await updateAccount(accountData.id, formData);
+      
+      setTimeout(() => {
+        setLoading(false);
+        Alert.alert('Éxito', 'Cuenta actualizada correctamente', [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      }, 1000);
+    } catch (error) {
+      setLoading(false);
+      Alert.alert('Error', 'No se pudo actualizar la cuenta');
+    }
   };
 
   const handleDelete = () => {
     Alert.alert(
       'Eliminar Cuenta',
-      '¿Estás seguro de que deseas eliminar esta cuenta? Esta acción no se puede deshacer y se eliminarán todas las transacciones asociadas.',
+      '¿Estás seguro de que deseas eliminar esta cuenta? Esta acción no se puede deshacer y eliminará todas las transacciones asociadas.',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
           text: 'Eliminar',
           style: 'destructive',
           onPress: () => {
-            // Aquí eliminarías de tu estado global o API
-            console.log('Cuenta eliminada:', account.id);
+            // Aquí iría tu lógica para eliminar la cuenta
             navigation.goBack();
+            Alert.alert('Cuenta eliminada', 'La cuenta ha sido eliminada correctamente');
           },
         },
       ]
@@ -136,126 +128,103 @@ const EditAccountScreen = () => {
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
       >
-        <Ionicons name="arrow-back" size={24} color="#2C3E50" />
+        <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
       </TouchableOpacity>
       <Text style={styles.headerTitle}>Editar Cuenta</Text>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.saveButton}
         onPress={handleSave}
+        disabled={loading}
       >
-        <Text style={styles.saveButtonText}>Guardar</Text>
+        <Text style={styles.saveButtonText}>
+          {loading ? 'Guardando...' : 'Guardar'}
+        </Text>
       </TouchableOpacity>
     </View>
   );
 
   const renderAccountPreview = () => (
     <View style={styles.previewContainer}>
-      <View style={[styles.previewCard, { borderLeftColor: accountColor }]}>
+      <View style={[styles.previewCard, { borderLeftColor: formData.color }]}>
         <View style={styles.previewHeader}>
-          <View style={[styles.previewIcon, { backgroundColor: accountColor + '20' }]}>
-            <Ionicons
-              name={getAccountTypeIcon(accountType)}
-              size={24}
-              color={accountColor}
+          <View style={[styles.previewIcon, { backgroundColor: formData.color + '20' }]}>
+            <Ionicons 
+              name={accountTypes[formData.type]?.icon || 'wallet'} 
+              size={24} 
+              color={formData.color} 
             />
           </View>
           <View style={styles.previewInfo}>
             <Text style={styles.previewName}>
-              {accountName || 'Nombre de la cuenta'}
+              {formData.name || 'Nombre de la cuenta'}
             </Text>
             <Text style={styles.previewType}>
-              {getAccountTypeName(accountType)}
+              {accountTypes[formData.type]?.name || 'Tipo de cuenta'}
             </Text>
           </View>
-          <Text style={styles.previewBalance}>
-            {formatCurrency(parseFloat(initialBalance) || 0)}
+        </View>
+        <View style={styles.previewBalance}>
+          <Text style={styles.previewBalanceLabel}>Saldo</Text>
+          <Text style={styles.previewBalanceAmount}>
+            {formatCurrency(formData.balance)}
           </Text>
         </View>
-        {accountType === 'credit' && (
-          <View style={styles.previewCreditInfo}>
-            <Text style={styles.previewCreditLimit}>
-              Límite: {formatCurrency(parseFloat(creditLimit) || 0)}
-            </Text>
-          </View>
-        )}
       </View>
     </View>
   );
 
   const renderForm = () => (
-    <ScrollView style={styles.formContainer} showsVerticalScrollIndicator={false}>
+    <View style={styles.formContainer}>
       {/* Nombre de la cuenta */}
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>Nombre de la cuenta *</Text>
         <TextInput
           style={styles.textInput}
-          value={accountName}
-          onChangeText={setAccountName}
-          placeholder="Ej. BBVA Bancomer"
+          value={formData.name}
+          onChangeText={(text) => setFormData({...formData, name: text})}
+          placeholder="Ej. BBVA Nómina"
           placeholderTextColor="#BDC3C7"
-          maxLength={50}
         />
-      </View>
-
-      {/* Tipo de cuenta */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Tipo de cuenta</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.typeSelector}>
-          {accountTypes.map((type) => (
-            <TouchableOpacity
-              key={type.type}
-              style={[
-                styles.typeOption,
-                accountType === type.type && styles.typeOptionActive
-              ]}
-              onPress={() => setAccountType(type.type)}
-            >
-              <Ionicons
-                name={type.icon}
-                size={20}
-                color={accountType === type.type ? 'white' : '#7F8C8D'}
-              />
-              <Text style={[
-                styles.typeOptionText,
-                accountType === type.type && styles.typeOptionTextActive
-              ]}>
-                {type.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
       </View>
 
       {/* Número de cuenta */}
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>
-          {accountType === 'digital' ? 'Email/Usuario' : 'Número de cuenta'}
-        </Text>
+        <Text style={styles.inputLabel}>Número de cuenta</Text>
         <TextInput
           style={styles.textInput}
-          value={accountNumber}
-          onChangeText={setAccountNumber}
-          placeholder={accountType === 'digital' ? 'usuario@email.com' : '****1234'}
+          value={formData.accountNumber}
+          onChangeText={(text) => setFormData({...formData, accountNumber: text})}
+          placeholder="1234567890"
           placeholderTextColor="#BDC3C7"
-          keyboardType={accountType === 'digital' ? 'email-address' : 'default'}
+          keyboardType="numeric"
         />
       </View>
 
-      {/* Saldo inicial */}
+      {/* Banco/Institución */}
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>
-          {accountType === 'credit' ? 'Saldo actual' : 'Saldo inicial'}
-        </Text>
-        <View style={styles.amountInputContainer}>
+        <Text style={styles.inputLabel}>Banco/Institución</Text>
+        <TextInput
+          style={styles.textInput}
+          value={formData.bank}
+          onChangeText={(text) => setFormData({...formData, bank: text})}
+          placeholder="Ej. BBVA, Banamex, PayPal"
+          placeholderTextColor="#BDC3C7"
+        />
+      </View>
+
+      {/* Saldo actual */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.inputLabel}>Saldo actual *</Text>
+        <View style={styles.balanceInputContainer}>
           <Text style={styles.currencySymbol}>$</Text>
           <TextInput
-            style={styles.amountInput}
-            value={initialBalance}
-            onChangeText={(text) => setInitialBalance(formatAmount(text))}
+            style={styles.balanceInput}
+            value={formData.balance}
+            onChangeText={(text) => setFormData({...formData, balance: text.replace(/[^0-9.-]/g, '')})}
             placeholder="0.00"
             placeholderTextColor="#BDC3C7"
             keyboardType="decimal-pad"
@@ -264,15 +233,15 @@ const EditAccountScreen = () => {
       </View>
 
       {/* Límite de crédito (solo para tarjetas de crédito) */}
-      {accountType === 'credit' && (
+      {formData.type === 'credit' && (
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Límite de crédito *</Text>
-          <View style={styles.amountInputContainer}>
+          <View style={styles.balanceInputContainer}>
             <Text style={styles.currencySymbol}>$</Text>
             <TextInput
-              style={styles.amountInput}
-              value={creditLimit}
-              onChangeText={(text) => setCreditLimit(formatAmount(text))}
+              style={styles.balanceInput}
+              value={formData.creditLimit}
+              onChangeText={(text) => setFormData({...formData, creditLimit: text.replace(/[^0-9.-]/g, '')})}
               placeholder="0.00"
               placeholderTextColor="#BDC3C7"
               keyboardType="decimal-pad"
@@ -281,65 +250,82 @@ const EditAccountScreen = () => {
         </View>
       )}
 
+      {/* Descripción */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.inputLabel}>Descripción</Text>
+        <TextInput
+          style={[styles.textInput, styles.textArea]}
+          value={formData.description}
+          onChangeText={(text) => setFormData({...formData, description: text})}
+          placeholder="Descripción opcional de la cuenta"
+          placeholderTextColor="#BDC3C7"
+          multiline={true}
+          numberOfLines={3}
+        />
+      </View>
+
       {/* Color de la cuenta */}
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Color</Text>
+        <Text style={styles.inputLabel}>Color de la cuenta</Text>
         <TouchableOpacity
-          style={[styles.colorSelector, { backgroundColor: accountColor }]}
-          onPress={() => setShowColorPicker(true)}
+          style={styles.colorSelector}
+          onPress={() => setShowColorModal(true)}
         >
-          <Ionicons name="color-palette" size={20} color="white" />
-          <Text style={styles.colorSelectorText}>Cambiar color</Text>
+          <View style={[styles.colorPreview, { backgroundColor: formData.color }]} />
+          <Text style={styles.colorText}>Seleccionar color</Text>
+          <Ionicons name="chevron-forward" size={20} color="#BDC3C7" />
         </TouchableOpacity>
       </View>
 
-      {/* Estado activo */}
-      <View style={styles.inputGroup}>
-        <View style={styles.switchContainer}>
-          <View style={styles.switchInfo}>
-            <Text style={styles.inputLabel}>Cuenta activa</Text>
-            <Text style={styles.switchDescription}>
-              Las cuentas inactivas no aparecerán en las transacciones
-            </Text>
+      {/* Configuraciones */}
+      <View style={styles.settingsSection}>
+        <Text style={styles.sectionTitle}>Configuraciones</Text>
+        
+        <View style={styles.settingItem}>
+          <View style={styles.settingInfo}>
+            <Text style={styles.settingTitle}>Cuenta activa</Text>
+            <Text style={styles.settingDescription}>Mostrar en transacciones</Text>
           </View>
           <Switch
-            value={isActive}
-            onValueChange={setIsActive}
-            trackColor={{ false: '#E0E0E0', true: '#667eea' }}
-            thumbColor={isActive ? '#fff' : '#f4f3f4'}
+            value={formData.isActive}
+            onValueChange={(value) => setFormData({...formData, isActive: value})}
+            trackColor={{ false: '#E0E6ED', true: formData.color }}
+            thumbColor={formData.isActive ? '#FFFFFF' : '#f4f3f4'}
+          />
+        </View>
+
+        <View style={styles.settingItem}>
+          <View style={styles.settingInfo}>
+            <Text style={styles.settingTitle}>Incluir en total</Text>
+            <Text style={styles.settingDescription}>Incluir en patrimonio total</Text>
+          </View>
+          <Switch
+            value={formData.includeInTotal}
+            onValueChange={(value) => setFormData({...formData, includeInTotal: value})}
+            trackColor={{ false: '#E0E6ED', true: formData.color }}
+            thumbColor={formData.includeInTotal ? '#FFFFFF' : '#f4f3f4'}
           />
         </View>
       </View>
-
-      {/* Botón eliminar */}
-      <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={handleDelete}
-      >
-        <Ionicons name="trash" size={20} color="#E74C3C" />
-        <Text style={styles.deleteButtonText}>Eliminar cuenta</Text>
-      </TouchableOpacity>
-
-      {/* Espacio adicional */}
-      <View style={styles.bottomSpacer} />
-    </ScrollView>
+    </View>
   );
 
-  const renderColorPicker = () => (
+  const renderColorModal = () => (
     <Modal
-      visible={showColorPicker}
+      visible={showColorModal}
       transparent={true}
       animationType="slide"
-      onRequestClose={() => setShowColorPicker(false)}
+      onRequestClose={() => setShowColorModal(false)}
     >
       <View style={styles.modalOverlay}>
-        <View style={styles.colorPickerModal}>
-          <View style={styles.colorPickerHeader}>
-            <Text style={styles.colorPickerTitle}>Seleccionar Color</Text>
-            <TouchableOpacity onPress={() => setShowColorPicker(false)}>
+        <View style={styles.colorModalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Seleccionar Color</Text>
+            <TouchableOpacity onPress={() => setShowColorModal(false)}>
               <Ionicons name="close" size={24} color="#2C3E50" />
             </TouchableOpacity>
           </View>
+          
           <View style={styles.colorGrid}>
             {colorOptions.map((color) => (
               <TouchableOpacity
@@ -347,15 +333,15 @@ const EditAccountScreen = () => {
                 style={[
                   styles.colorOption,
                   { backgroundColor: color },
-                  accountColor === color && styles.selectedColor
+                  formData.color === color && styles.selectedColorOption
                 ]}
                 onPress={() => {
-                  setAccountColor(color);
-                  setShowColorPicker(false);
+                  setFormData({...formData, color});
+                  setShowColorModal(false);
                 }}
               >
-                {accountColor === color && (
-                  <Ionicons name="checkmark" size={20} color="white" />
+                {formData.color === color && (
+                  <Ionicons name="checkmark" size={20} color="#FFFFFF" />
                 )}
               </TouchableOpacity>
             ))}
@@ -365,14 +351,48 @@ const EditAccountScreen = () => {
     </Modal>
   );
 
-  return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
-      {renderHeader()}
-      {renderAccountPreview()}
-      {renderForm()}
-      {renderColorPicker()}
+  const renderDangerZone = () => (
+    <View style={styles.dangerZone}>
+      <Text style={styles.dangerTitle}>Zona de peligro</Text>
+      <TouchableOpacity
+        style={styles.deleteButton}
+        onPress={handleDelete}
+      >
+        <Ionicons name="trash" size={20} color="#E74C3C" />
+        <Text style={styles.deleteButtonText}>Eliminar cuenta</Text>
+      </TouchableOpacity>
+      <Text style={styles.dangerNote}>
+        Esta acción eliminará la cuenta y todas sus transacciones permanentemente.
+      </Text>
     </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={formData.color} />
+      
+      {renderHeader()}
+      
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+        >
+          {renderAccountPreview()}
+          {renderForm()}
+          {renderDangerZone()}
+        </ScrollView>
+      </KeyboardAvoidingView>
+      
+      {renderColorModal()}
+    </SafeAreaView>
   );
 };
 
@@ -385,92 +405,116 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    backgroundColor: '#667eea',
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E8E8E8',
+    paddingTop: Platform.OS === 'ios' ? 10 : 15,
+    paddingBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
   },
   backButton: {
-    padding: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: '#FFFFFF',
+    flex: 1,
+    textAlign: 'center',
   },
   saveButton: {
-    backgroundColor: '#667eea',
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
   },
   saveButtonText: {
-    color: 'white',
-    fontSize: 16,
+    color: '#FFFFFF',
     fontWeight: '600',
   },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 30,
+  },
   previewContainer: {
-    padding: 20,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E8E8E8',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    marginBottom: 10,
   },
   previewCard: {
     backgroundColor: '#F8F9FA',
-    borderRadius: 12,
+    borderRadius: 15,
     padding: 16,
     borderLeftWidth: 4,
   },
   previewHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 12,
   },
   previewIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
   previewInfo: {
     flex: 1,
   },
   previewName: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: 'bold',
     color: '#2C3E50',
+    marginBottom: 2,
   },
   previewType: {
     fontSize: 14,
     color: '#7F8C8D',
-    marginTop: 2,
   },
   previewBalance: {
-    fontSize: 18,
+    alignItems: 'center',
+  },
+  previewBalanceLabel: {
+    fontSize: 14,
+    color: '#7F8C8D',
+    marginBottom: 4,
+  },
+  previewBalanceAmount: {
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#2C3E50',
   },
-  previewCreditInfo: {
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-  },
-  previewCreditLimit: {
-    fontSize: 14,
-    color: '#7F8C8D',
-  },
   formContainer: {
-    flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 20,
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 3,
   },
   inputGroup: {
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    marginBottom: 20,
   },
   inputLabel: {
     fontSize: 16,
@@ -481,107 +525,97 @@ const styles = StyleSheet.create({
   textInput: {
     fontSize: 16,
     color: '#2C3E50',
-    paddingVertical: 12,
+    backgroundColor: '#F8F9FA',
+    borderWidth: 1,
+    borderColor: '#E0E6ED',
+    borderRadius: 12,
     paddingHorizontal: 16,
-    backgroundColor: '#F8F9FA',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
+    paddingVertical: 14,
+    minHeight: 50,
   },
-  typeSelector: {
-    flexDirection: 'row',
+  textArea: {
+    minHeight: 80,
+    textAlignVertical: 'top',
   },
-  typeOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginRight: 8,
-    borderRadius: 20,
-    backgroundColor: '#F8F9FA',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  typeOptionActive: {
-    backgroundColor: '#667eea',
-    borderColor: '#667eea',
-  },
-  typeOptionText: {
-    fontSize: 14,
-    color: '#7F8C8D',
-    marginLeft: 6,
-  },
-  typeOptionTextActive: {
-    color: 'white',
-  },
-  amountInputContainer: {
+  balanceInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F8F9FA',
-    borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: '#E0E6ED',
+    borderRadius: 12,
     paddingHorizontal: 16,
   },
   currencySymbol: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#2C3E50',
+    fontWeight: 'bold',
+    color: '#667eea',
     marginRight: 8,
   },
-  amountInput: {
+  balanceInput: {
     flex: 1,
     fontSize: 16,
     color: '#2C3E50',
-    paddingVertical: 12,
+    paddingVertical: 14,
+    minHeight: 50,
   },
   colorSelector: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    borderWidth: 1,
+    borderColor: '#E0E6ED',
+    borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-    justifyContent: 'center',
+    paddingVertical: 14,
+    minHeight: 50,
   },
-  colorSelectorText: {
-    color: 'white',
+  colorPreview: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    marginRight: 12,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  colorText: {
+    flex: 1,
     fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
+    color: '#2C3E50',
   },
-  switchContainer: {
+  settingsSection: {
+    marginTop: 10,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+    marginBottom: 15,
+  },
+  settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
-  switchInfo: {
+  settingInfo: {
     flex: 1,
   },
-  switchDescription: {
-    fontSize: 14,
-    color: '#7F8C8D',
-    marginTop: 4,
-  },
-  deleteButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 15,
-    marginHorizontal: 20,
-    marginTop: 20,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E74C3C',
-    backgroundColor: '#FFE6E6',
-  },
-  deleteButtonText: {
-    color: '#E74C3C',
+  settingTitle: {
     fontSize: 16,
     fontWeight: '600',
-    marginLeft: 8,
+    color: '#2C3E50',
+    marginBottom: 2,
   },
-  bottomSpacer: {
-    height: 50,
+  settingDescription: {
+    fontSize: 14,
+    color: '#7F8C8D',
   },
   modalOverlay: {
     flex: 1,
@@ -589,22 +623,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  colorPickerModal: {
-    backgroundColor: 'white',
+  colorModalContent: {
+    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 20,
-    margin: 20,
-    maxWidth: 300,
-    width: '100%',
+    width: '85%',
+    maxHeight: '60%',
   },
-  colorPickerHeader: {
+  modalHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 20,
   },
-  colorPickerTitle: {
-    fontSize: 18,
+  modalTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#2C3E50',
   },
@@ -614,17 +647,65 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   colorOption: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginBottom: 10,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    margin: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  selectedColorOption: {
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+  },
+  dangerZone: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 20,
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#FFE5E5',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  dangerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#E74C3C',
+    marginBottom: 15,
+  },
+  deleteButton: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
+    backgroundColor: '#FFE5E5',
+    borderWidth: 1,
+    borderColor: '#E74C3C',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginBottom: 10,
   },
-  selectedColor: {
-    borderColor: '#2C3E50',
+  deleteButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#E74C3C',
+    marginLeft: 8,
+  },
+  dangerNote: {
+    fontSize: 12,
+    color: '#7F8C8D',
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
 });
 
