@@ -8,19 +8,12 @@ import { View, Text, StyleSheet } from 'react-native';
 import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
 import TransactionsScreen from '../screens/TransactionsScreen';
-import BudgetScreen from '../screens/BudgetScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import AddTransactionScreen from '../screens/AddTransactionScreen';
 import WalletsScreen from '../screens/WalletsScreen';
-
-// Pantallas temporales
-const StatsScreen = () => (
-  <View style={styles.tempScreen}>
-    <Ionicons name="stats-chart" size={64} color="#667eea" />
-    <Text style={styles.tempText}>Estadísticas</Text>
-    <Text style={styles.tempSubtext}>Reportes y análisis detallados</Text>
-  </View>
-);
+import AddWalletScreen from '../screens/AddWalletScreen';
+import TransferScreen from '../screens/TransferScreen';
+import EditAccountScreen from '../screens/EditAccountScreen'; // Nueva pantalla
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -40,9 +33,9 @@ const TabNavigator = () => {
             case 'Transacciones':
               iconName = focused ? 'list' : 'list-outline';
               break;
-            // case 'Estadísticas':
-            //   iconName = focused ? 'stats-chart' : 'stats-chart-outline';
-            //   break;
+            case 'Transferir':
+              iconName = focused ? 'swap-horizontal' : 'swap-horizontal-outline';
+              break;
             case 'Cuentas':
               iconName = focused ? 'wallet' : 'wallet-outline';
               break;
@@ -50,7 +43,7 @@ const TabNavigator = () => {
               iconName = focused ? 'person' : 'person-outline';
               break;
             default:
-              iconName = 'circle';
+              iconName = 'wallet';
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -89,6 +82,10 @@ const TabNavigator = () => {
         component={TransactionsScreen}
       />
       <Tab.Screen 
+        name="Transferir" 
+        component={TransferScreen}
+      />
+      <Tab.Screen 
         name="Cuentas" 
         component={WalletsScreen}
       />
@@ -96,7 +93,6 @@ const TabNavigator = () => {
         name="Perfil" 
         component={ProfileScreen}
       />
-      
     </Tab.Navigator>
   );
 };
@@ -110,13 +106,14 @@ const MainNavigator = () => {
       }}
       initialRouteName='Login'
     >
+      {/* Pantalla de Login */}
       <Stack.Screen 
         name="Login" 
         component={LoginScreen} 
         options={{ headerShown: false }}
       />
+      
       {/* Pantallas principales con tabs */}
-
       <Stack.Screen 
         name="MainTabs" 
         component={TabNavigator}
@@ -130,6 +127,22 @@ const MainNavigator = () => {
         options={{
           presentation: 'modal',
           headerShown: false,
+        }}
+      />
+      
+      <Stack.Screen 
+        name="AddWallet" 
+        component={AddWalletScreen}
+        options={{ 
+          headerShown: false,
+          presentation: 'modal'
+        }}
+      />
+            <Stack.Screen 
+        name="EditAccount" 
+        component={EditAccountScreen}
+        options={{
+          gestureDirection: 'horizontal',
         }}
       />
       

@@ -18,6 +18,9 @@ const { width } = Dimensions.get('window');
 const WalletsScreen = () => {
   const navigation = useNavigation();
   const [showAddModal, setShowAddModal] = useState(false);
+  const handleEditWallet = (wallet) => {
+    navigation.navigate('EditAccount', { account: wallet });
+  };
 
   // Datos de ejemplo de cuentas/wallets
   const [wallets, setWallets] = useState([
@@ -148,7 +151,8 @@ const WalletsScreen = () => {
       <Text style={styles.headerTitle}>Mis Cuentas</Text>
       <TouchableOpacity 
         style={styles.addButton}
-        onPress={() => setShowAddModal(true)}
+        onPress={() => navigation.navigate('AddWallet')
+}
       >
         <Ionicons name="add" size={24} color="white" />
       </TouchableOpacity>
@@ -216,9 +220,12 @@ const WalletsScreen = () => {
         </View>
         
         <View style={styles.walletActions}>
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="create-outline" size={20} color="#7F8C8D" />
-          </TouchableOpacity>
+<TouchableOpacity 
+  style={styles.actionButton}
+  onPress={() => navigation.navigate('EditAccount', { account: wallet })}
+>
+  <Ionicons name="create-outline" size={20} color="#7F8C8D" />
+</TouchableOpacity>
         </View>
       </View>
 
