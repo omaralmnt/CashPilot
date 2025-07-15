@@ -17,7 +17,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import Constants from 'expo-constants';
 
 // Configuración del backend
-const API_BASE_URL = 'http://192.168.100.20:4000'; // Cambia esta IP por la de tu servidor
+const API_BASE_URL = 'http://10.0.2.229:4000'; // Cambia esta IP por la de tu servidor
 // Si estás usando localhost en el emulador de Android, usa: http://10.0.2.2:4000
 // Si estás usando el simulador de iOS o Expo Go, usa la IP de tu máquina
 

@@ -9,9 +9,10 @@ app.use(cors())
 
 
 const rutasUsuario = require('./rutas/r_usuario');
-
+const rutasCuenta = require('./rutas/r_cuenta')
 
 app.use('/api/usuario', rutasUsuario);
+app.use('/api/cuenta', rutasCuenta);
 
 app.listen(PORT, () => {
     console.log(`Servidor escuchando en el puerto ${PORT}`);
