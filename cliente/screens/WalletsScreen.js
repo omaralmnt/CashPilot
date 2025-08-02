@@ -12,12 +12,17 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext'; // Ajusta la ruta según tu estructura
 
 const { width } = Dimensions.get('window');
 
 const WalletsScreen = () => {
   const navigation = useNavigation();
+  const { colors, isDark } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  
   const [showAddModal, setShowAddModal] = useState(false);
+  
   const handleEditWallet = (wallet) => {
     navigation.navigate('EditAccount', { account: wallet });
   };
@@ -83,11 +88,11 @@ const WalletsScreen = () => {
   ]);
 
   const accountTypes = [
-    { type: 'bank', name: 'Cuenta Bancaria', icon: 'business', color: '#3498DB' },
-    { type: 'credit', name: 'Tarjeta de Crédito', icon: 'card', color: '#E74C3C' },
-    { type: 'cash', name: 'Efectivo', icon: 'cash', color: '#27AE60' },
-    { type: 'digital', name: 'Monedero Digital', icon: 'phone-portrait', color: '#9B59B6' },
-    { type: 'investment', name: 'Inversiones', icon: 'trending-up', color: '#F39C12' },
+    { type: 'bank', name: 'Cuenta Bancaria', icon: 'business', color: colors.info },
+    { type: 'credit', name: 'Tarjeta de Crédito', icon: 'card', color: colors.error },
+    { type: 'cash', name: 'Efectivo', icon: 'cash', color: colors.success },
+    { type: 'digital', name: 'Monedero Digital', icon: 'phone-portrait', color: colors.primary },
+    { type: 'investment', name: 'Inversiones', icon: 'trending-up', color: colors.warning },
   ];
 
   const getTotalBalance = () => {
@@ -151,8 +156,7 @@ const WalletsScreen = () => {
       <Text style={styles.headerTitle}>Mis Cuentas</Text>
       <TouchableOpacity 
         style={styles.addButton}
-        onPress={() => navigation.navigate('AddWallet')
-}
+        onPress={() => navigation.navigate('AddWallet')}
       >
         <Ionicons name="add" size={24} color="white" />
       </TouchableOpacity>
@@ -163,31 +167,31 @@ const WalletsScreen = () => {
     <View style={styles.summaryContainer}>
       <View style={styles.summaryCard}>
         <View style={styles.summaryIconContainer}>
-          <Ionicons name="wallet" size={24} color="#3498DB" />
+          <Ionicons name="wallet" size={24} color={colors.info} />
         </View>
         <Text style={styles.summaryLabel}>Patrimonio Total</Text>
-        <Text style={[styles.summaryAmount, { color: getTotalBalance() >= 0 ? '#27AE60' : '#E74C3C' }]}>
+        <Text style={[styles.summaryAmount, { color: getTotalBalance() >= 0 ? colors.success : colors.error }]}>
           {getTotalBalance() >= 0 ? '+' : ''}{formatCurrency(getTotalBalance())}
         </Text>
       </View>
 
       <View style={styles.summaryRow}>
         <View style={[styles.summaryCard, styles.summaryCardSmall]}>
-          <View style={[styles.summaryIconContainer, { backgroundColor: '#27AE6020' }]}>
-            <Ionicons name="trending-up" size={20} color="#27AE60" />
+          <View style={[styles.summaryIconContainer, { backgroundColor: colors.success + '20' }]}>
+            <Ionicons name="trending-up" size={20} color={colors.success} />
           </View>
           <Text style={styles.summaryLabelSmall}>Activos</Text>
-          <Text style={[styles.summaryAmountSmall, { color: '#27AE60' }]}>
+          <Text style={[styles.summaryAmountSmall, { color: colors.success }]}>
             {formatCurrency(getTotalAssets())}
           </Text>
         </View>
 
         <View style={[styles.summaryCard, styles.summaryCardSmall]}>
-          <View style={[styles.summaryIconContainer, { backgroundColor: '#E74C3C20' }]}>
-            <Ionicons name="trending-down" size={20} color="#E74C3C" />
+          <View style={[styles.summaryIconContainer, { backgroundColor: colors.error + '20' }]}>
+            <Ionicons name="trending-down" size={20} color={colors.error} />
           </View>
           <Text style={styles.summaryLabelSmall}>Deudas</Text>
-          <Text style={[styles.summaryAmountSmall, { color: '#E74C3C' }]}>
+          <Text style={[styles.summaryAmountSmall, { color: colors.error }]}>
             {formatCurrency(getTotalDebt())}
           </Text>
         </View>
@@ -220,12 +224,12 @@ const WalletsScreen = () => {
         </View>
         
         <View style={styles.walletActions}>
-<TouchableOpacity 
-  style={styles.actionButton}
-  onPress={() => navigation.navigate('EditAccount', { account: wallet })}
->
-  <Ionicons name="create-outline" size={20} color="#7F8C8D" />
-</TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => navigation.navigate('EditAccount', { account: wallet })}
+          >
+            <Ionicons name="create-outline" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -237,8 +241,8 @@ const WalletsScreen = () => {
           styles.balanceAmount,
           { 
             color: wallet.type === 'credit' 
-              ? (wallet.balance < 0 ? '#E74C3C' : '#27AE60')
-              : '#2C3E50'
+              ? (wallet.balance < 0 ? colors.error : colors.success)
+              : colors.text
           }
         ]}>
           {wallet.type === 'credit' && wallet.balance < 0 ? '-' : ''}
@@ -255,7 +259,7 @@ const WalletsScreen = () => {
                   styles.creditUsageFill, 
                   { 
                     width: `${Math.abs(wallet.balance) / wallet.creditLimit * 100}%`,
-                    backgroundColor: Math.abs(wallet.balance) / wallet.creditLimit > 0.8 ? '#E74C3C' : '#3498DB'
+                    backgroundColor: Math.abs(wallet.balance) / wallet.creditLimit > 0.8 ? colors.error : colors.info
                   }
                 ]} 
               />
@@ -281,7 +285,7 @@ const WalletsScreen = () => {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Agregar Cuenta</Text>
             <TouchableOpacity onPress={() => setShowAddModal(false)}>
-              <Ionicons name="close" size={24} color="#2C3E50" />
+              <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
 
@@ -294,9 +298,7 @@ const WalletsScreen = () => {
                 style={styles.accountTypeOption}
                 onPress={() => {
                   setShowAddModal(false);
-                  // Aquí navegarías a la pantalla de creación de cuenta
-                  // navigation.navigate('AddAccount', { type: accountType.type });
-                  Alert.alert('Próximamente', `Agregar ${accountType.name}`);
+                  navigation.navigate('AddWallet');
                 }}
               >
                 <View style={[styles.accountTypeIcon, { backgroundColor: accountType.color + '20' }]}>
@@ -316,7 +318,7 @@ const WalletsScreen = () => {
                     {accountType.type === 'investment' && 'Acciones, fondos, criptomonedas'}
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#BDC3C7" />
+                <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -327,7 +329,10 @@ const WalletsScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
+      <StatusBar 
+        barStyle={colors.statusBarStyle} 
+        backgroundColor={colors.background} 
+      />
       
       {renderHeader()}
       {renderSummaryCards()}
@@ -340,21 +345,14 @@ const WalletsScreen = () => {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Mis Cuentas ({wallets.length})</Text>
           <TouchableOpacity style={styles.sortButton}>
-            <Ionicons name="swap-vertical" size={16} color="#7F8C8D" />
+            <Ionicons name="swap-vertical" size={16} color={colors.textSecondary} />
             <Text style={styles.sortText}>Ordenar</Text>
           </TouchableOpacity>
         </View>
 
         {wallets.map(renderWalletCard)}
 
-        <TouchableOpacity 
-          style={styles.addAccountCard}
-          onPress={() => setShowAddModal(true)}
-        >
-          <Ionicons name="add-circle-outline" size={32} color="#667eea" />
-          <Text style={styles.addAccountText}>Agregar Nueva Cuenta</Text>
-          <Text style={styles.addAccountSubtext}>Banco, tarjeta, efectivo o digital</Text>
-        </TouchableOpacity>
+
       </ScrollView>
 
       {renderAddAccountModal()}
@@ -362,10 +360,10 @@ const WalletsScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, isDark }) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -374,22 +372,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 50,
     paddingBottom: 20,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background,
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
   },
   addButton: {
-    backgroundColor: '#667eea',
+    backgroundColor: colors.primary,
     width: 45,
     height: 45,
     borderRadius: 22.5,
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -399,14 +397,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   summaryCard: {
-    backgroundColor: 'white',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 20,
     marginBottom: 10,
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: colors.shadowOpacity,
     shadowRadius: 4,
   },
   summaryCardSmall: {
@@ -422,19 +420,19 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#3498DB20',
+    backgroundColor: colors.info + '20',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 10,
   },
   summaryLabel: {
     fontSize: 14,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     marginBottom: 5,
   },
   summaryLabelSmall: {
     fontSize: 12,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     marginBottom: 5,
   },
   summaryAmount: {
@@ -461,7 +459,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
   },
   sortButton: {
     flexDirection: 'row',
@@ -469,19 +467,19 @@ const styles = StyleSheet.create({
   },
   sortText: {
     fontSize: 14,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     marginLeft: 5,
   },
   walletCard: {
-    backgroundColor: 'white',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 20,
     marginBottom: 15,
     borderLeftWidth: 4,
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: colors.shadowOpacity,
     shadowRadius: 4,
   },
   walletHeader: {
@@ -509,17 +507,17 @@ const styles = StyleSheet.create({
   walletName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
     marginBottom: 3,
   },
   walletType: {
     fontSize: 14,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     marginBottom: 2,
   },
   walletNumber: {
     fontSize: 12,
-    color: '#95A5A6',
+    color: colors.textLight,
   },
   walletActions: {
     flexDirection: 'row',
@@ -529,12 +527,12 @@ const styles = StyleSheet.create({
   },
   walletBalance: {
     borderTopWidth: 1,
-    borderTopColor: '#ECF0F1',
+    borderTopColor: colors.border,
     paddingTop: 15,
   },
   balanceLabel: {
     fontSize: 12,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     marginBottom: 5,
   },
   balanceAmount: {
@@ -547,18 +545,18 @@ const styles = StyleSheet.create({
   },
   creditLabel: {
     fontSize: 12,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     marginBottom: 3,
   },
   creditLimit: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#2C3E50',
+    color: colors.text,
     marginBottom: 8,
   },
   creditUsageBar: {
     height: 6,
-    backgroundColor: '#ECF0F1',
+    backgroundColor: colors.border,
     borderRadius: 3,
     marginBottom: 5,
   },
@@ -568,27 +566,27 @@ const styles = StyleSheet.create({
   },
   creditUsage: {
     fontSize: 11,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
   },
   addAccountCard: {
-    backgroundColor: 'white',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 30,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#667eea20',
+    borderColor: colors.primary + '20',
     borderStyle: 'dashed',
   },
   addAccountText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#667eea',
+    color: colors.primary,
     marginTop: 10,
     marginBottom: 5,
   },
   addAccountSubtext: {
     fontSize: 14,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   modalOverlay: {
@@ -597,7 +595,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingHorizontal: 20,
@@ -610,16 +608,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#E8E8E8',
+    borderBottomColor: colors.border,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
   },
   modalSubtitle: {
     fontSize: 16,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     marginTop: 10,
     marginBottom: 20,
   },
@@ -632,7 +630,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: colors.separator,
   },
   accountTypeIcon: {
     width: 50,
@@ -648,12 +646,12 @@ const styles = StyleSheet.create({
   accountTypeName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2C3E50',
+    color: colors.text,
     marginBottom: 2,
   },
   accountTypeDescription: {
     fontSize: 13,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     lineHeight: 18,
   },
 });

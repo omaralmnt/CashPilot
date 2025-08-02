@@ -12,11 +12,15 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const { colors, isDark } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  
   const [selectedPeriod, setSelectedPeriod] = useState('Este Mes');
   const [userName, setUserName] = useState('Usuario');
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -25,7 +29,7 @@ const HomeScreen = () => {
     loadUserInfo();
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-    }, 60000); // Actualizar cada minuto
+    }, 60000);
 
     return () => clearInterval(timer);
   }, []);
@@ -35,6 +39,7 @@ const HomeScreen = () => {
       const token = await AsyncStorage.getItem('userToken');
       if (token) {
         const payload = JSON.parse(atob(token.split('.')[1]));
+        console.log('JWT Payload:', payload);
         setUserName(payload.nombre || 'Usuario');
       }
     } catch (error) {
@@ -104,9 +109,9 @@ const HomeScreen = () => {
   ];
 
   const quickActions = [
-    { id: 'add_transaction', title: 'Nueva\nTransacción', icon: 'add-circle', color: '#667eea' },
-    { id: 'transfer', title: 'Transferir', icon: 'swap-horizontal', color: '#45B7D1' },
-    { id: 'add_account', title: 'Nueva\nCuenta', icon: 'wallet', color: '#4ECDC4' },
+    { id: 'add_transaction', title: 'Nueva\nTransacción', icon: 'add-circle', color: colors.primary },
+    { id: 'transfer', title: 'Transferir', icon: 'swap-horizontal', color: colors.info },
+    { id: 'add_account', title: 'Nueva\nCuenta', icon: 'wallet', color: colors.success },
   ];
 
   const getGreeting = () => {
@@ -146,7 +151,7 @@ const HomeScreen = () => {
         </View>
         
         <TouchableOpacity style={styles.notificationButton}>
-          <Ionicons name="notifications-outline" size={24} color="#2C3E50" />
+          <Ionicons name="notifications-outline" size={24} color={colors.text} />
           <View style={styles.notificationDot} />
         </TouchableOpacity>
       </View>
@@ -186,11 +191,11 @@ const HomeScreen = () => {
       <View style={styles.incomeExpenseRow}>
         <View style={styles.incomeExpenseItem}>
           <View style={styles.incomeExpenseIcon}>
-            <Ionicons name="trending-up" size={20} color="#4ECDC4" />
+            <Ionicons name="trending-up" size={20} color={colors.success} />
           </View>
           <View>
             <Text style={styles.incomeExpenseLabel}>Ingresos</Text>
-            <Text style={[styles.incomeExpenseAmount, { color: '#4ECDC4' }]}>
+            <Text style={[styles.incomeExpenseAmount, { color: colors.success }]}>
               +{formatCurrency(monthlyIncome)}
             </Text>
           </View>
@@ -200,11 +205,11 @@ const HomeScreen = () => {
         
         <View style={styles.incomeExpenseItem}>
           <View style={styles.incomeExpenseIcon}>
-            <Ionicons name="trending-down" size={20} color="#FF6B6B" />
+            <Ionicons name="trending-down" size={20} color={colors.error} />
           </View>
           <View>
             <Text style={styles.incomeExpenseLabel}>Gastos</Text>
-            <Text style={[styles.incomeExpenseAmount, { color: '#FF6B6B' }]}>
+            <Text style={[styles.incomeExpenseAmount, { color: colors.error }]}>
               -{formatCurrency(monthlyExpenses)}
             </Text>
           </View>
@@ -234,7 +239,7 @@ const HomeScreen = () => {
                 styles.progressFill, 
                 { 
                   width: `${Math.min(progress, 100)}%`,
-                  backgroundColor: progress >= 100 ? '#4ECDC4' : '#667eea'
+                  backgroundColor: progress >= 100 ? colors.success : colors.primary
                 }
               ]} 
             />
@@ -295,7 +300,7 @@ const HomeScreen = () => {
             <View style={styles.transactionRight}>
               <Text style={[
                 styles.transactionAmount,
-                { color: transaction.amount > 0 ? '#4ECDC4' : '#FF6B6B' }
+                { color: transaction.amount > 0 ? colors.success : colors.error }
               ]}>
                 {transaction.amount > 0 ? '+' : ''}{formatCurrency(transaction.amount)}
               </Text>
@@ -336,7 +341,7 @@ const HomeScreen = () => {
               
               <Text style={[
                 styles.categoryPercentage,
-                { color: percentage > 80 ? '#FF6B6B' : '#7F8C8D' }
+                { color: percentage > 80 ? colors.error : colors.textSecondary }
               ]}>
                 {Math.round(percentage)}%
               </Text>
@@ -349,7 +354,7 @@ const HomeScreen = () => {
                     styles.categoryProgressFill, 
                     { 
                       width: `${Math.min(percentage, 100)}%`,
-                      backgroundColor: percentage > 80 ? '#FF6B6B' : category.color
+                      backgroundColor: percentage > 80 ? colors.error : category.color
                     }
                   ]} 
                 />
@@ -363,7 +368,10 @@ const HomeScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
+      <StatusBar 
+        barStyle={colors.statusBarStyle} 
+        backgroundColor={colors.background} 
+      />
       
       {renderHeader()}
       
@@ -382,18 +390,18 @@ const HomeScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, isDark }) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background,
   },
   header: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#E8ECEF',
+    borderBottomColor: colors.border,
   },
   headerTop: {
     flexDirection: 'row',
@@ -406,19 +414,19 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: 16,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   userName: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
     marginTop: 2,
   },
   notificationButton: {
     position: 'relative',
     padding: 8,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.surfaceSecondary,
     borderRadius: 12,
   },
   notificationDot: {
@@ -427,12 +435,12 @@ const styles = StyleSheet.create({
     right: 6,
     width: 8,
     height: 8,
-    backgroundColor: '#FF6B6B',
+    backgroundColor: colors.error,
     borderRadius: 4,
   },
   currentDate: {
     fontSize: 14,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     textTransform: 'capitalize',
   },
   scrollContainer: {
@@ -445,9 +453,9 @@ const styles = StyleSheet.create({
     margin: 20,
     padding: 25,
     borderRadius: 20,
-    backgroundColor: '#667eea',
+    backgroundColor: colors.primary,
     elevation: 8,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -520,11 +528,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     padding: 20,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: colors.shadowOpacity,
     shadowRadius: 6,
   },
   savingsHeader: {
@@ -536,16 +544,16 @@ const styles = StyleSheet.create({
   savingsTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2C3E50',
+    color: colors.text,
   },
   savingsPercentage: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#667eea',
+    color: colors.primary,
   },
   savingsAmount: {
     fontSize: 14,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     marginBottom: 12,
   },
   progressContainer: {
@@ -553,7 +561,7 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 8,
-    backgroundColor: '#E8ECEF',
+    backgroundColor: colors.border,
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -577,9 +585,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: colors.shadowOpacity,
     shadowRadius: 4,
   },
   quickActionText: {
@@ -603,22 +611,22 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
   },
   seeAllText: {
-    color: '#667eea',
+    color: colors.primary,
     fontSize: 14,
     fontWeight: '600',
   },
   transactionCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 16,
     marginBottom: 12,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: colors.shadowOpacity,
     shadowRadius: 3,
   },
   transactionMain: {
@@ -639,12 +647,12 @@ const styles = StyleSheet.create({
   transactionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2C3E50',
+    color: colors.text,
     marginBottom: 2,
   },
   transactionCategory: {
     fontSize: 13,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     marginBottom: 4,
   },
   transactionMeta: {
@@ -659,11 +667,11 @@ const styles = StyleSheet.create({
   },
   transactionWallet: {
     fontSize: 12,
-    color: '#95A5A6',
+    color: colors.textLight,
   },
   transactionDate: {
     fontSize: 12,
-    color: '#95A5A6',
+    color: colors.textLight,
   },
   transactionRight: {
     alignItems: 'flex-end',
@@ -675,17 +683,17 @@ const styles = StyleSheet.create({
   },
   transactionTime: {
     fontSize: 12,
-    color: '#95A5A6',
+    color: colors.textLight,
   },
   categoryCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 16,
     marginBottom: 12,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: colors.shadowOpacity,
     shadowRadius: 3,
   },
   categoryHeader: {
@@ -710,12 +718,12 @@ const styles = StyleSheet.create({
   categoryName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2C3E50',
+    color: colors.text,
     marginBottom: 2,
   },
   categoryBudget: {
     fontSize: 13,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
   },
   categoryPercentage: {
     fontSize: 16,
@@ -726,7 +734,7 @@ const styles = StyleSheet.create({
   },
   categoryProgressBar: {
     height: 6,
-    backgroundColor: '#E8ECEF',
+    backgroundColor: colors.border,
     borderRadius: 3,
     overflow: 'hidden',
   },

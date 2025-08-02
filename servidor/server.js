@@ -10,10 +10,11 @@ app.use(cors())
 
 const rutasUsuario = require('./rutas/r_usuario');
 const rutasCuenta = require('./rutas/r_cuenta')
-
+const rutasGithub = require('./controladores/githubAuth')
 app.use('/api/usuario', rutasUsuario);
 app.use('/api/cuenta', rutasCuenta);
-
+app.use('/api/cuenta', rutasCuenta);
+app.use('/api/github',rutasGithub)
 app.listen(PORT, () => {
     console.log(`Servidor escuchando en el puerto ${PORT}`);
 });

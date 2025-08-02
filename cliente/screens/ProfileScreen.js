@@ -6,92 +6,39 @@ import {
   TouchableOpacity,
   StatusBar,
   Alert,
-  useColorScheme,
-  Appearance,
   Modal,
   Platform,
+  Appearance,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext'; // Ajusta la ruta según tu estructura
 
 const ProfileScreen = ({ navigation }) => {
   const [userName, setUserName] = useState('');
   const [userId, setUserId] = useState('');
-  const [themeMode, setThemeMode] = useState('system'); // 'light', 'dark', 'system'
   const [showThemeModal, setShowThemeModal] = useState(false);
-  const [forceUpdate, setForceUpdate] = useState(0); // Para forzar re-renders
   
-  const systemColorScheme = useColorScheme();
-  
-  // Función mejorada para detectar el tema del sistema
-  const getSystemTheme = () => {
-    // Método 1: useColorScheme
-    const hookTheme = systemColorScheme;
-    
-    // Método 2: Appearance.getColorScheme (más confiable)
-    const appearanceTheme = Appearance.getColorScheme();
-    
-    console.log('🔍 Hook theme:', hookTheme);
-    console.log('🔍 Appearance theme:', appearanceTheme);
-    
-    // Priorizar Appearance.getColorScheme si está disponible
-    const detectedTheme = appearanceTheme || hookTheme || 'light';
-    
-    console.log('🎯 Tema final detectado:', detectedTheme);
-    return detectedTheme;
-  };
-  
-  // Determinar el tema actual basado en la configuración
-  const getCurrentTheme = () => {
-    console.log('🎨 themeMode:', themeMode);
-    
-    if (themeMode === 'system') {
-      const systemTheme = getSystemTheme();
-      const result = systemTheme === 'dark' ? 'dark' : 'light';
-      console.log('🎨 Tema resultante del sistema:', result);
-      return result;
-    }
-    
-    console.log('🎨 Tema manual:', themeMode);
-    return themeMode;
-  };
-  
-  const currentTheme = getCurrentTheme();
-  const isDark = currentTheme === 'dark';
+  // Usar el contexto de tema
+  const {
+    themeMode,
+    currentTheme,
+    isDark,
+    colors,
+    setThemeMode,
+    getThemeDisplayName,
+    getThemeIcon,
+    forceUpdate,
+    setForceUpdate,
+  } = useTheme();
+
+  // Crear estilos usando el hook personalizado
+  const styles = useThemedStyles(createStyles);
 
   useEffect(() => {
     loadUserInfo();
-    loadThemePreference();
-
-    // Función para manejar cambios de tema
-    const handleThemeChange = ({ colorScheme }) => {
-      console.log('🔄 Tema del sistema cambió a:', colorScheme);
-      console.log('🔄 Appearance.getColorScheme():', Appearance.getColorScheme());
-      
-      // Forzar re-render si estamos en modo sistema
-      if (themeMode === 'system') {
-        setForceUpdate(prev => prev + 1);
-      }
-    };
-
-    // Listener para detectar cambios de tema del sistema
-    const subscription = Appearance.addChangeListener(handleThemeChange);
-
-    // Log inicial del estado del sistema
-    console.log('📱 Tema inicial del sistema (Appearance):', Appearance.getColorScheme());
-    console.log('📱 Tema inicial del sistema (Hook):', systemColorScheme);
-    console.log('📱 Platform:', Platform.OS, Platform.Version);
-
-    return () => {
-      console.log('🧹 Limpiando listener de tema');
-      subscription?.remove();
-    };
   }, []);
-
-  // Re-ejecutar cuando cambie el themeMode o forceUpdate
-  useEffect(() => {
-    console.log('⚙️ ThemeMode o forceUpdate cambió:', themeMode, forceUpdate);
-  }, [themeMode, forceUpdate]);
 
   const loadUserInfo = async () => {
     try {
@@ -105,30 +52,6 @@ const ProfileScreen = ({ navigation }) => {
     } catch (error) {
       console.log('❌ Error loading user info:', error);
       setUserName('Usuario');
-    }
-  };
-
-  const loadThemePreference = async () => {
-    try {
-      const savedTheme = await AsyncStorage.getItem('themeMode');
-      if (savedTheme) {
-        console.log('📱 Tema guardado encontrado:', savedTheme);
-        setThemeMode(savedTheme);
-      } else {
-        console.log('📱 No hay tema guardado, usando sistema por defecto');
-      }
-    } catch (error) {
-      console.log('❌ Error loading theme preference:', error);
-    }
-  };
-
-  const saveThemePreference = async (theme) => {
-    try {
-      await AsyncStorage.setItem('themeMode', theme);
-      setThemeMode(theme);
-      console.log('💾 Tema guardado:', theme);
-    } catch (error) {
-      console.log('❌ Error saving theme preference:', error);
     }
   };
 
@@ -169,26 +92,6 @@ const ProfileScreen = ({ navigation }) => {
       .slice(0, 2);
   };
 
-  const getThemeDisplayName = (theme) => {
-    const names = {
-      light: 'Claro',
-      dark: 'Oscuro',
-      system: 'Sistema'
-    };
-    return names[theme] || 'Sistema';
-  };
-
-  const getThemeIcon = (theme) => {
-    const icons = {
-      light: 'sunny-outline',
-      dark: 'moon-outline',
-      system: 'phone-portrait-outline'
-    };
-    return icons[theme] || 'phone-portrait-outline';
-  };
-
-  const styles = getStyles(isDark);
-
   const ThemeModal = () => (
     <Modal
       visible={showThemeModal}
@@ -204,7 +107,7 @@ const ProfileScreen = ({ navigation }) => {
               onPress={() => setShowThemeModal(false)}
               style={styles.closeButton}
             >
-              <Ionicons name="close" size={24} color={isDark ? '#FFFFFF' : '#2C3E50'} />
+              <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
           
@@ -216,7 +119,7 @@ const ProfileScreen = ({ navigation }) => {
                 themeMode === theme && styles.selectedThemeOption
               ]}
               onPress={() => {
-                saveThemePreference(theme);
+                setThemeMode(theme);
                 setShowThemeModal(false);
               }}
             >
@@ -224,7 +127,7 @@ const ProfileScreen = ({ navigation }) => {
                 <Ionicons 
                   name={getThemeIcon(theme)} 
                   size={24} 
-                  color={themeMode === theme ? '#667eea' : (isDark ? '#FFFFFF' : '#2C3E50')} 
+                  color={themeMode === theme ? colors.primary : colors.text} 
                 />
                 <View style={styles.themeOptionText}>
                   <Text style={[
@@ -241,7 +144,7 @@ const ProfileScreen = ({ navigation }) => {
                 </View>
               </View>
               {themeMode === theme && (
-                <Ionicons name="checkmark" size={20} color="#667eea" />
+                <Ionicons name="checkmark" size={20} color={colors.primary} />
               )}
             </TouchableOpacity>
           ))}
@@ -250,10 +153,10 @@ const ProfileScreen = ({ navigation }) => {
           {__DEV__ && (
             <View style={styles.debugInfo}>
               <Text style={styles.debugText}>
-                Hook: {systemColorScheme} | Appearance: {Appearance.getColorScheme()}
+                Appearance: {Appearance.getColorScheme()} | Platform: {Platform.OS}
               </Text>
               <Text style={styles.debugText}>
-                Modo: {themeMode} | Actual: {currentTheme} | Platform: {Platform.OS}
+                Modo: {themeMode} | Actual: {currentTheme}
               </Text>
               <TouchableOpacity 
                 style={styles.debugButton}
@@ -274,8 +177,8 @@ const ProfileScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <StatusBar 
-        barStyle={isDark ? "light-content" : "dark-content"} 
-        backgroundColor={isDark ? "#1a1a1a" : "#667eea"} 
+        barStyle={colors.statusBarStyle} 
+        backgroundColor={colors.statusBarBackground} 
       />
       
       {/* Header */}
@@ -289,102 +192,111 @@ const ProfileScreen = ({ navigation }) => {
         )}
       </View>
 
-      {/* Profile Card */}
-      <View style={styles.profileCard}>
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {getInitials(userName)}
-            </Text>
-          </View>
-        </View>
-        
-        <Text style={styles.userName}>{userName}</Text>
-        <Text style={styles.userSubtitle}>Miembro de CashPilot</Text>
-        <Text style={styles.userInfo}>Gestiona tus finanzas de manera inteligente</Text>
-      </View>
-
-      {/* Theme Selection */}
-      <View style={styles.themeSection}>
-        <Text style={styles.sectionTitle}>Apariencia</Text>
-        <TouchableOpacity 
-          style={styles.themeSelector}
-          onPress={() => setShowThemeModal(true)}
-        >
-          <View style={styles.themeSelectorLeft}>
-            <Ionicons 
-              name={getThemeIcon(themeMode)} 
-              size={24} 
-              color={isDark ? '#FFFFFF' : '#667eea'} 
-            />
-            <View style={styles.themeSelectorText}>
-              <Text style={styles.themeSelectorTitle}>Tema</Text>
-              <Text style={styles.themeSelectorSubtitle}>
-                {getThemeDisplayName(themeMode)}
-                {themeMode === 'system' && ` (${currentTheme === 'dark' ? 'Oscuro' : 'Claro'} - ${Appearance.getColorScheme() || 'null'})`}
+      {/* Scrollable Content */}
+      <ScrollView 
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={true}
+      >
+        {/* Profile Card */}
+        <View style={styles.profileCard}>
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {getInitials(userName)}
               </Text>
             </View>
           </View>
-          <Ionicons 
-            name="chevron-forward" 
-            size={20} 
-            color={isDark ? '#FFFFFF' : '#7F8C8D'} 
-          />
-        </TouchableOpacity>
-      </View>
-
-      {/* Quick Stats */}
-      <View style={styles.statsContainer}>
-        <View style={styles.statItem}>
-          <Ionicons name="wallet-outline" size={24} color="#667eea" />
-          <Text style={styles.statLabel}>Control Total</Text>
-          <Text style={styles.statDescription}>de tus finanzas</Text>
+          
+          <Text style={styles.userName}>{userName}</Text>
+          <Text style={styles.userSubtitle}>Miembro de CashPilot</Text>
+          <Text style={styles.userInfo}>Gestiona tus finanzas de manera inteligente</Text>
         </View>
-        
-        <View style={styles.statItem}>
-          <Ionicons name="trending-up-outline" size={24} color="#4ECDC4" />
-          <Text style={styles.statLabel}>Crecimiento</Text>
-          <Text style={styles.statDescription}>inteligente</Text>
-        </View>
-        
-        <View style={styles.statItem}>
-          <Ionicons name="shield-checkmark-outline" size={24} color="#45B7D1" />
-          <Text style={styles.statLabel}>Seguridad</Text>
-          <Text style={styles.statDescription}>garantizada</Text>
-        </View>
-      </View>
 
-      {/* App Info */}
-      <View style={styles.infoContainer}>
-        <Text style={styles.infoTitle}>CashPilot v2.1.0</Text>
-        <Text style={styles.infoDescription}>
-          Tu piloto financiero personal que te ayuda a navegar hacia tus metas económicas
-        </Text>
-      </View>
+        {/* Theme Selection */}
+        <View style={styles.themeSection}>
+          <Text style={styles.sectionTitle}>Apariencia</Text>
+          <TouchableOpacity 
+            style={styles.themeSelector}
+            onPress={() => setShowThemeModal(true)}
+          >
+            <View style={styles.themeSelectorLeft}>
+              <Ionicons 
+                name={getThemeIcon(themeMode)} 
+                size={24} 
+                color={colors.primary} 
+              />
+              <View style={styles.themeSelectorText}>
+                <Text style={styles.themeSelectorTitle}>Tema</Text>
+                <Text style={styles.themeSelectorSubtitle}>
+                  {getThemeDisplayName(themeMode)}
+                  {themeMode === 'system' && ` (${currentTheme === 'dark' ? 'Oscuro' : 'Claro'})`}
+                </Text>
+              </View>
+            </View>
+            <Ionicons 
+              name="chevron-forward" 
+              size={20} 
+              color={colors.textSecondary} 
+            />
+          </TouchableOpacity>
+        </View>
 
-      {/* Logout Button */}
-      <View style={styles.logoutContainer}>
-        <TouchableOpacity 
-          style={styles.logoutButton}
-          onPress={handleLogout}
-        >
-          <Ionicons name="log-out-outline" size={20} color="#FF6B6B" />
-          <Text style={styles.logoutText}>Cerrar Sesión</Text>
-        </TouchableOpacity>
-      </View>
+        {/* Quick Stats */}
+        <View style={styles.statsContainer}>
+          <View style={styles.statItem}>
+            <Ionicons name="wallet-outline" size={24} color={colors.primary} />
+            <Text style={styles.statLabel}>Control Total</Text>
+            <Text style={styles.statDescription}>de tus finanzas</Text>
+          </View>
+          
+          <View style={styles.statItem}>
+            <Ionicons name="trending-up-outline" size={24} color={colors.success} />
+            <Text style={styles.statLabel}>Crecimiento</Text>
+            <Text style={styles.statDescription}>inteligente</Text>
+          </View>
+          
+          <View style={styles.statItem}>
+            <Ionicons name="shield-checkmark-outline" size={24} color={colors.info} />
+            <Text style={styles.statLabel}>Seguridad</Text>
+            <Text style={styles.statDescription}>garantizada</Text>
+          </View>
+        </View>
+
+        {/* App Info */}
+        <View style={styles.infoContainer}>
+          <Text style={styles.infoTitle}>CashPilot v2.1.0</Text>
+          <Text style={styles.infoDescription}>
+            Tu piloto financiero personal que te ayuda a navegar hacia tus metas económicas
+          </Text>
+        </View>
+
+        {/* Logout Button */}
+        <View style={styles.logoutContainer}>
+          <TouchableOpacity 
+            style={styles.logoutButton}
+            onPress={handleLogout}
+          >
+            <Ionicons name="log-out-outline" size={20} color={colors.error} />
+            <Text style={styles.logoutText}>Cerrar Sesión</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
 
       <ThemeModal />
     </View>
   );
 };
 
-const getStyles = (isDark) => StyleSheet.create({
+// Función para crear estilos que recibe el objeto theme
+const createStyles = ({ colors, isDark }) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: isDark ? '#121212' : '#F8F9FA',
+    backgroundColor: colors.background,
   },
   header: {
-    backgroundColor: isDark ? '#1a1a1a' : '#667eea',
+    backgroundColor: colors.statusBarBackground,
     paddingTop: 50,
     paddingBottom: 20,
     paddingHorizontal: 20,
@@ -408,12 +320,12 @@ const getStyles = (isDark) => StyleSheet.create({
     margin: 20,
     padding: 30,
     borderRadius: 20,
-    backgroundColor: isDark ? '#1E1E1E' : 'white',
+    backgroundColor: colors.surface,
     alignItems: 'center',
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: colors.shadowOpacity,
     shadowRadius: 8,
   },
   avatarContainer: {
@@ -423,11 +335,11 @@ const getStyles = (isDark) => StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#667eea',
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
-    borderColor: isDark ? '#333' : '#E8ECFF',
+    borderColor: colors.primaryLight,
   },
   avatarText: {
     color: 'white',
@@ -437,19 +349,19 @@ const getStyles = (isDark) => StyleSheet.create({
   userName: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: isDark ? '#FFFFFF' : '#2C3E50',
+    color: colors.text,
     marginBottom: 5,
     textAlign: 'center',
   },
   userSubtitle: {
     fontSize: 16,
-    color: '#667eea',
+    color: colors.primary,
     fontWeight: '600',
     marginBottom: 10,
   },
   userInfo: {
     fontSize: 14,
-    color: isDark ? '#B0B0B0' : '#7F8C8D',
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -460,21 +372,21 @@ const getStyles = (isDark) => StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: isDark ? '#FFFFFF' : '#2C3E50',
+    color: colors.text,
     marginBottom: 15,
   },
   themeSelector: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: isDark ? '#1E1E1E' : 'white',
+    backgroundColor: colors.surface,
     paddingVertical: 15,
     paddingHorizontal: 20,
     borderRadius: 15,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: colors.shadowOpacity,
     shadowRadius: 3,
   },
   themeSelectorLeft: {
@@ -488,24 +400,24 @@ const getStyles = (isDark) => StyleSheet.create({
   themeSelectorTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: isDark ? '#FFFFFF' : '#2C3E50',
+    color: colors.text,
   },
   themeSelectorSubtitle: {
     fontSize: 14,
-    color: isDark ? '#B0B0B0' : '#7F8C8D',
+    color: colors.textSecondary,
     marginTop: 2,
   },
   statsContainer: {
     flexDirection: 'row',
     marginHorizontal: 20,
     marginBottom: 20,
-    backgroundColor: isDark ? '#1E1E1E' : 'white',
+    backgroundColor: colors.surface,
     borderRadius: 15,
     padding: 20,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: colors.shadowOpacity,
     shadowRadius: 3,
   },
   statItem: {
@@ -516,65 +428,73 @@ const getStyles = (isDark) => StyleSheet.create({
   statLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: isDark ? '#FFFFFF' : '#2C3E50',
+    color: colors.text,
     marginTop: 8,
     textAlign: 'center',
   },
   statDescription: {
     fontSize: 12,
-    color: isDark ? '#B0B0B0' : '#7F8C8D',
+    color: colors.textSecondary,
     marginTop: 2,
     textAlign: 'center',
   },
   infoContainer: {
     margin: 20,
     padding: 25,
-    backgroundColor: isDark ? '#1E1E1E' : 'white',
+    backgroundColor: colors.surface,
     borderRadius: 15,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: colors.shadowOpacity,
     shadowRadius: 3,
   },
   infoTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: isDark ? '#FFFFFF' : '#2C3E50',
+    color: colors.text,
     marginBottom: 10,
     textAlign: 'center',
   },
   infoDescription: {
     fontSize: 14,
-    color: isDark ? '#B0B0B0' : '#7F8C8D',
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
   },
   logoutContainer: {
     margin: 20,
-    marginTop: 'auto',
+    marginBottom: 30, // Espacio extra al final
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: isDark ? '#1E1E1E' : 'white',
+    backgroundColor: colors.surface,
     paddingVertical: 15,
     paddingHorizontal: 20,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#FFE5E5',
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: colors.shadowOpacity,
     shadowRadius: 3,
   },
   logoutText: {
-    color: '#FF6B6B',
+    color: colors.error,
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
+  },
+  // ScrollView styles
+  scrollContainer: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 20, // Espacio extra al final del scroll
   },
   // Modal styles
   modalOverlay: {
@@ -583,7 +503,7 @@ const getStyles = (isDark) => StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: isDark ? '#1E1E1E' : 'white',
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingBottom: 30,
@@ -596,12 +516,12 @@ const getStyles = (isDark) => StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 20,
     borderBottomWidth: 1,
-    borderBottomColor: isDark ? '#333' : '#E0E6ED',
+    borderBottomColor: colors.border,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: isDark ? '#FFFFFF' : '#2C3E50',
+    color: colors.text,
   },
   closeButton: {
     padding: 5,
@@ -613,10 +533,10 @@ const getStyles = (isDark) => StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: isDark ? '#333' : '#F0F0F0',
+    borderBottomColor: colors.separator,
   },
   selectedThemeOption: {
-    backgroundColor: isDark ? '#2A2A2A' : '#F8F9FF',
+    backgroundColor: colors.surfaceSecondary,
   },
   themeOptionLeft: {
     flexDirection: 'row',
@@ -630,30 +550,30 @@ const getStyles = (isDark) => StyleSheet.create({
   themeOptionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: isDark ? '#FFFFFF' : '#2C3E50',
+    color: colors.text,
   },
   selectedThemeText: {
-    color: '#667eea',
+    color: colors.primary,
   },
   themeOptionDescription: {
     fontSize: 13,
-    color: isDark ? '#B0B0B0' : '#7F8C8D',
+    color: colors.textSecondary,
     marginTop: 2,
   },
   debugInfo: {
     paddingHorizontal: 20,
     paddingTop: 15,
     borderTopWidth: 1,
-    borderTopColor: isDark ? '#333' : '#E0E6ED',
+    borderTopColor: colors.border,
   },
   debugText: {
     fontSize: 11,
-    color: isDark ? '#888' : '#999',
+    color: colors.textLight,
     textAlign: 'center',
     marginBottom: 5,
   },
   debugButton: {
-    backgroundColor: isDark ? '#333' : '#E0E6ED',
+    backgroundColor: colors.surfaceSecondary,
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 8,
@@ -661,7 +581,7 @@ const getStyles = (isDark) => StyleSheet.create({
   },
   debugButtonText: {
     fontSize: 12,
-    color: isDark ? '#FFF' : '#333',
+    color: colors.text,
     textAlign: 'center',
     fontWeight: '600',
   },

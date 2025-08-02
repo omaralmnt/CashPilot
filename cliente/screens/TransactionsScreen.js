@@ -13,11 +13,15 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext'; // Ajusta la ruta según tu estructura
 
 const { width } = Dimensions.get('window');
 
 const TransactionsScreen = () => {
   const navigation = useNavigation();
+  const { colors, isDark } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  
   const [selectedFilter, setSelectedFilter] = useState('Todos');
   const [searchText, setSearchText] = useState('');
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -247,17 +251,17 @@ const TransactionsScreen = () => {
       
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color="#7F8C8D" style={styles.searchIcon} />
+          <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder="Buscar transacciones..."
-            placeholderTextColor="#BDC3C7"
+            placeholderTextColor={colors.textLight}
             value={searchText}
             onChangeText={setSearchText}
           />
           {searchText ? (
             <TouchableOpacity onPress={() => setSearchText('')}>
-              <Ionicons name="close-circle" size={20} color="#7F8C8D" />
+              <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           ) : null}
         </View>
@@ -266,14 +270,14 @@ const TransactionsScreen = () => {
           style={styles.filterButton}
           onPress={() => setShowFilterModal(true)}
         >
-          <Ionicons name="options" size={20} color="#667eea" />
+          <Ionicons name="options" size={20} color={colors.primary} />
         </TouchableOpacity>
         
         <TouchableOpacity 
           style={styles.sortButton}
           onPress={() => setShowSortModal(true)}
         >
-          <Ionicons name="swap-vertical" size={20} color="#667eea" />
+          <Ionicons name="swap-vertical" size={20} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
@@ -328,7 +332,7 @@ const TransactionsScreen = () => {
         <View style={styles.transactionRight}>
           <Text style={[
             styles.transactionAmount,
-            { color: item.type === 'ingreso' ? '#27AE60' : '#E74C3C' }
+            { color: item.type === 'ingreso' ? colors.success : colors.error }
           ]}>
             {item.type === 'gasto' ? '-' : '+'}{formatCurrency(item.amount)}
           </Text>
@@ -352,7 +356,7 @@ const TransactionsScreen = () => {
         </View>
         
         <TouchableOpacity style={styles.moreButton}>
-          <Ionicons name="ellipsis-horizontal" size={16} color="#BDC3C7" />
+          <Ionicons name="ellipsis-horizontal" size={16} color={colors.textLight} />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -368,7 +372,7 @@ const TransactionsScreen = () => {
           <View style={styles.dateSummary}>
             <Text style={[
               styles.dayTotal,
-              { color: dayTotal >= 0 ? '#27AE60' : '#E74C3C' }
+              { color: dayTotal >= 0 ? colors.success : colors.error }
             ]}>
               {dayTotal >= 0 ? '+' : ''}{formatCurrency(dayTotal)}
             </Text>
@@ -392,7 +396,7 @@ const TransactionsScreen = () => {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Filtrar por</Text>
             <TouchableOpacity onPress={() => setShowFilterModal(false)}>
-              <Ionicons name="close" size={24} color="#2C3E50" />
+              <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
           
@@ -416,7 +420,7 @@ const TransactionsScreen = () => {
                   {filter}
                 </Text>
                 {selectedFilter === filter && (
-                  <Ionicons name="checkmark" size={20} color="#667eea" />
+                  <Ionicons name="checkmark" size={20} color={colors.primary} />
                 )}
               </TouchableOpacity>
             ))}
@@ -433,7 +437,7 @@ const TransactionsScreen = () => {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Ordenar por</Text>
             <TouchableOpacity onPress={() => setShowSortModal(false)}>
-              <Ionicons name="close" size={24} color="#2C3E50" />
+              <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
           
@@ -457,7 +461,7 @@ const TransactionsScreen = () => {
                   {option.label}
                 </Text>
                 {sortBy === option.key && (
-                  <Ionicons name="checkmark" size={20} color="#667eea" />
+                  <Ionicons name="checkmark" size={20} color={colors.primary} />
                 )}
               </TouchableOpacity>
             ))}
@@ -472,7 +476,10 @@ const TransactionsScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
+      <StatusBar 
+        barStyle={colors.statusBarStyle} 
+        backgroundColor={colors.background} 
+      />
       
       {renderHeader()}
       
@@ -483,7 +490,7 @@ const TransactionsScreen = () => {
       >
         {Object.keys(groupedTransactions).length === 0 ? (
           <View style={styles.emptyState}>
-            <Ionicons name="receipt-outline" size={64} color="#BDC3C7" />
+            <Ionicons name="receipt-outline" size={64} color={colors.textLight} />
             <Text style={styles.emptyTitle}>No hay transacciones</Text>
             <Text style={styles.emptySubtitle}>
               {searchText ? 'No se encontraron resultados' : 'Comienza agregando tu primera transacción'}
@@ -502,18 +509,18 @@ const TransactionsScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, isDark }) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background,
   },
   header: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#E8ECEF',
+    borderBottomColor: colors.border,
   },
   headerTop: {
     flexDirection: 'row',
@@ -524,19 +531,19 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
   },
   addButton: {
-    backgroundColor: '#667eea',
+    backgroundColor: colors.primary,
     width: 40,
     height: 40,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: colors.shadowOpacity,
     shadowRadius: 4,
   },
   searchContainer: {
@@ -548,7 +555,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.surfaceSecondary,
     borderRadius: 12,
     paddingHorizontal: 15,
     height: 45,
@@ -560,10 +567,10 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#2C3E50',
+    color: colors.text,
   },
   filterButton: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.surfaceSecondary,
     width: 45,
     height: 45,
     borderRadius: 12,
@@ -572,7 +579,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   sortButton: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.surfaceSecondary,
     width: 45,
     height: 45,
     borderRadius: 12,
@@ -586,21 +593,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   filterChip: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.surfaceSecondary,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
     marginRight: 10,
     borderWidth: 1,
-    borderColor: '#E8ECEF',
+    borderColor: colors.border,
   },
   filterChipActive: {
-    backgroundColor: '#667eea',
-    borderColor: '#667eea',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   filterChipText: {
     fontSize: 14,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   filterChipTextActive: {
@@ -626,7 +633,7 @@ const styles = StyleSheet.create({
   dateTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
     textTransform: 'capitalize',
   },
   dateSummary: {
@@ -638,14 +645,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   transactionCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: colors.shadowOpacity,
     shadowRadius: 8,
   },
   transactionMain: {
@@ -672,17 +679,17 @@ const styles = StyleSheet.create({
   transactionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2C3E50',
+    color: colors.text,
     marginBottom: 2,
   },
   transactionCategory: {
     fontSize: 13,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     marginBottom: 2,
   },
   transactionDescription: {
     fontSize: 12,
-    color: '#95A5A6',
+    color: colors.textLight,
   },
   transactionRight: {
     alignItems: 'flex-end',
@@ -695,7 +702,7 @@ const styles = StyleSheet.create({
   },
   transactionTime: {
     fontSize: 12,
-    color: '#95A5A6',
+    color: colors.textLight,
   },
   walletInfo: {
     flexDirection: 'row',
@@ -703,7 +710,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#F8F9FA',
+    borderTopColor: colors.surfaceSecondary,
   },
   walletIndicator: {
     flex: 1,
@@ -721,12 +728,12 @@ const styles = StyleSheet.create({
   walletName: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#2C3E50',
+    color: colors.text,
     marginRight: 8,
   },
   walletAccount: {
     fontSize: 12,
-    color: '#95A5A6',
+    color: colors.textLight,
   },
   moreButton: {
     padding: 4,
@@ -739,13 +746,13 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 16,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
   },
@@ -755,7 +762,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingHorizontal: 20,
@@ -768,13 +775,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#E8ECEF',
+    borderBottomColor: colors.border,
     marginBottom: 20,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
   },
   filterGrid: {
     gap: 8,
@@ -786,20 +793,20 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 16,
     borderRadius: 12,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.surfaceSecondary,
   },
   filterOptionActive: {
-    backgroundColor: '#667eea10',
+    backgroundColor: colors.primaryLight,
     borderWidth: 1,
-    borderColor: '#667eea',
+    borderColor: colors.primary,
   },
   filterOptionText: {
     fontSize: 16,
-    color: '#2C3E50',
+    color: colors.text,
     fontWeight: '500',
   },
   filterOptionTextActive: {
-    color: '#667eea',
+    color: colors.primary,
     fontWeight: '600',
   },
 });

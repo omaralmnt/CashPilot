@@ -14,16 +14,20 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext'; // Ajusta la ruta según tu estructura
 
 const AddWalletScreen = () => {
   const navigation = useNavigation();
+  const { colors, isDark } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  
   const [accountType, setAccountType] = useState('');
   const [accountName, setAccountName] = useState('');
   const [initialBalance, setInitialBalance] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [bankName, setBankName] = useState('');
   const [creditLimit, setCreditLimit] = useState('');
-  const [selectedColor, setSelectedColor] = useState('#667eea');
+  const [selectedColor, setSelectedColor] = useState(colors.primary);
   const [notes, setNotes] = useState('');
   const [showTypeModal, setShowTypeModal] = useState(false);
   const [showBankModal, setShowBankModal] = useState(false);
@@ -85,7 +89,8 @@ const AddWalletScreen = () => {
   ];
 
   // Colores disponibles para las cuentas
-  const colors = [
+  const themeColors = [
+    colors.primary, colors.success, colors.error, colors.info, colors.warning,
     '#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b',
     '#38ef7d', '#fad961', '#f76b1c', '#fa709a', '#fee140',
     '#e94c6f', '#667eea', '#764ba2', '#f093fb', '#4facfe',
@@ -183,7 +188,7 @@ const AddWalletScreen = () => {
         onPress={() => navigation.goBack()}
         style={styles.backButton}
       >
-        <Ionicons name="arrow-back" size={24} color="#2C3E50" />
+        <Ionicons name="arrow-back" size={24} color={colors.text} />
       </TouchableOpacity>
       
       <Text style={styles.headerTitle}>Agregar Cuenta</Text>
@@ -221,7 +226,7 @@ const AddWalletScreen = () => {
         ) : (
           <Text style={styles.selectorPlaceholder}>Seleccionar tipo de cuenta</Text>
         )}
-        <Ionicons name="chevron-forward" size={20} color="#BDC3C7" />
+        <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
       </TouchableOpacity>
     </View>
   );
@@ -235,7 +240,7 @@ const AddWalletScreen = () => {
           value={accountName}
           onChangeText={setAccountName}
           placeholder="Ej. Mi Cuenta de Ahorros"
-          placeholderTextColor="#BDC3C7"
+          placeholderTextColor={colors.textLight}
           maxLength={50}
         />
       </View>
@@ -250,7 +255,7 @@ const AddWalletScreen = () => {
             <Text style={bankName ? styles.selectedText : styles.selectorPlaceholder}>
               {bankName || 'Seleccionar banco'}
             </Text>
-            <Ionicons name="chevron-forward" size={20} color="#BDC3C7" />
+            <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
           </TouchableOpacity>
         </View>
       )}
@@ -270,7 +275,7 @@ const AddWalletScreen = () => {
                 ? "No aplica" 
                 : "****1234"
           }
-          placeholderTextColor="#BDC3C7"
+          placeholderTextColor={colors.textLight}
           keyboardType={accountType === 'digital' ? 'email-address' : 'default'}
           editable={accountType !== 'cash'}
         />
@@ -290,7 +295,7 @@ const AddWalletScreen = () => {
               value={creditLimit}
               onChangeText={handleCreditLimitChange}
               placeholder="50,000.00"
-              placeholderTextColor="#BDC3C7"
+              placeholderTextColor={colors.textLight}
               keyboardType="decimal-pad"
               maxLength={10}
             />
@@ -314,7 +319,7 @@ const AddWalletScreen = () => {
               value={initialBalance}
               onChangeText={handleBalanceChange}
               placeholder="0.00"
-              placeholderTextColor="#BDC3C7"
+              placeholderTextColor={colors.textLight}
               keyboardType="decimal-pad"
               maxLength={10}
             />
@@ -341,7 +346,7 @@ const AddWalletScreen = () => {
       >
         <View style={[styles.colorPreview, { backgroundColor: selectedColor }]} />
         <Text style={styles.colorText}>Personalizar color</Text>
-        <Ionicons name="chevron-forward" size={20} color="#BDC3C7" />
+        <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
       </TouchableOpacity>
     </View>
   );
@@ -354,7 +359,7 @@ const AddWalletScreen = () => {
         value={notes}
         onChangeText={setNotes}
         placeholder="Información adicional sobre esta cuenta..."
-        placeholderTextColor="#BDC3C7"
+        placeholderTextColor={colors.textLight}
         multiline
         numberOfLines={3}
         maxLength={200}
@@ -370,7 +375,7 @@ const AddWalletScreen = () => {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Tipo de Cuenta</Text>
             <TouchableOpacity onPress={() => setShowTypeModal(false)}>
-              <Ionicons name="close" size={24} color="#2C3E50" />
+              <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
           
@@ -398,7 +403,7 @@ const AddWalletScreen = () => {
                   <Text style={styles.optionDescription}>{type.description}</Text>
                 </View>
                 {accountType === type.type && (
-                  <Ionicons name="checkmark" size={20} color="#27AE60" />
+                  <Ionicons name="checkmark" size={20} color={colors.success} />
                 )}
               </TouchableOpacity>
             ))}
@@ -415,7 +420,7 @@ const AddWalletScreen = () => {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Seleccionar Banco</Text>
             <TouchableOpacity onPress={() => setShowBankModal(false)}>
-              <Ionicons name="close" size={24} color="#2C3E50" />
+              <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
           
@@ -431,7 +436,7 @@ const AddWalletScreen = () => {
               >
                 <Text style={styles.bankOptionText}>{bank}</Text>
                 {bankName === bank && (
-                  <Ionicons name="checkmark" size={20} color="#27AE60" />
+                  <Ionicons name="checkmark" size={20} color={colors.success} />
                 )}
               </TouchableOpacity>
             ))}
@@ -448,14 +453,14 @@ const AddWalletScreen = () => {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Seleccionar Color</Text>
             <TouchableOpacity onPress={() => setShowColorModal(false)}>
-              <Ionicons name="close" size={24} color="#2C3E50" />
+              <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
           
           <View style={styles.colorGrid}>
-            {colors.map((color) => (
+            {themeColors.map((color, index) => (
               <TouchableOpacity
-                key={color}
+                key={index}
                 style={[
                   styles.colorOption,
                   { backgroundColor: color },
@@ -479,7 +484,10 @@ const AddWalletScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
+      <StatusBar 
+        barStyle={colors.statusBarStyle} 
+        backgroundColor={colors.background} 
+      />
       
       {renderHeader()}
       
@@ -513,10 +521,10 @@ const AddWalletScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, isDark }) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -525,9 +533,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 50,
     paddingBottom: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E6ED',
+    borderBottomColor: colors.border,
   },
   backButton: {
     padding: 8,
@@ -535,10 +543,10 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
   },
   saveButton: {
-    backgroundColor: '#667eea',
+    backgroundColor: colors.primary,
     borderRadius: 20,
     width: 40,
     height: 40,
@@ -561,17 +569,17 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2C3E50',
+    color: colors.text,
     marginBottom: 8,
   },
   textInput: {
     borderWidth: 1,
-    borderColor: '#E0E6ED',
+    borderColor: colors.border,
     borderRadius: 12,
     padding: 15,
     fontSize: 16,
-    color: '#2C3E50',
-    backgroundColor: '#FFFFFF',
+    color: colors.text,
+    backgroundColor: colors.surface,
   },
   notesInput: {
     height: 80,
@@ -581,15 +589,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E0E6ED',
+    borderColor: colors.border,
     borderRadius: 12,
     padding: 15,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
   },
   selectorPlaceholder: {
     flex: 1,
     fontSize: 16,
-    color: '#BDC3C7',
+    color: colors.textLight,
   },
   selectedContainer: {
     flex: 1,
@@ -602,12 +610,12 @@ const styles = StyleSheet.create({
   },
   selectedText: {
     fontSize: 16,
-    color: '#2C3E50',
+    color: colors.text,
     fontWeight: '500',
   },
   selectedDescription: {
     fontSize: 14,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     marginTop: 2,
   },
   typeIcon: {
@@ -621,27 +629,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E0E6ED',
+    borderColor: colors.border,
     borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     paddingHorizontal: 15,
   },
   currencySymbol: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
     marginRight: 8,
   },
   amountInput: {
     flex: 1,
     fontSize: 18,
-    color: '#2C3E50',
+    color: colors.text,
     paddingVertical: 15,
     fontWeight: '600',
   },
   amountPreview: {
     fontSize: 14,
-    color: '#667eea',
+    color: colors.primary,
     marginTop: 8,
     fontWeight: '500',
   },
@@ -649,10 +657,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E0E6ED',
+    borderColor: colors.border,
     borderRadius: 12,
     padding: 15,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
   },
   colorPreview: {
     width: 24,
@@ -663,7 +671,7 @@ const styles = StyleSheet.create({
   colorText: {
     flex: 1,
     fontSize: 16,
-    color: '#2C3E50',
+    color: colors.text,
   },
   modalOverlay: {
     flex: 1,
@@ -671,7 +679,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '80%',
@@ -682,12 +690,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E6ED',
+    borderBottomColor: colors.border,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
   },
   modalList: {
     maxHeight: 400,
@@ -697,7 +705,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#F8F9FA',
+    borderBottomColor: colors.separator,
   },
   optionTextContainer: {
     flex: 1,
@@ -706,17 +714,17 @@ const styles = StyleSheet.create({
   optionTitle: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#2C3E50',
+    color: colors.text,
   },
   optionDescription: {
     fontSize: 14,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     marginTop: 2,
   },
   bankOptionText: {
     flex: 1,
     fontSize: 16,
-    color: '#2C3E50',
+    color: colors.text,
   },
   colorGrid: {
     flexDirection: 'row',
@@ -735,7 +743,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   selectedColorOption: {
-    borderColor: '#2C3E50',
+    borderColor: colors.text,
   },
 });
 

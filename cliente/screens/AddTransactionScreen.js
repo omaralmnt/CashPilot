@@ -14,9 +14,13 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext'; // Ajusta la ruta según tu estructura
 
 const AddTransactionScreen = () => {
   const navigation = useNavigation();
+  const { colors, isDark } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  
   const [transactionType, setTransactionType] = useState('gasto');
   const [amount, setAmount] = useState('');
   const [title, setTitle] = useState('');
@@ -191,7 +195,7 @@ const AddTransactionScreen = () => {
         onPress={() => navigation.goBack()}
         style={styles.backButton}
       >
-        <Ionicons name="arrow-back" size={24} color="#2C3E50" />
+        <Ionicons name="arrow-back" size={24} color={colors.text} />
       </TouchableOpacity>
       
       <Text style={styles.headerTitle}>Nueva Transacción</Text>
@@ -221,7 +225,7 @@ const AddTransactionScreen = () => {
         <Ionicons 
           name="remove-circle" 
           size={24} 
-          color={transactionType === 'gasto' ? 'white' : '#FF6B6B'} 
+          color={transactionType === 'gasto' ? 'white' : colors.error} 
         />
         <Text style={[
           styles.typeButtonText,
@@ -245,7 +249,7 @@ const AddTransactionScreen = () => {
         <Ionicons 
           name="add-circle" 
           size={24} 
-          color={transactionType === 'ingreso' ? 'white' : '#4ECDC4'} 
+          color={transactionType === 'ingreso' ? 'white' : colors.success} 
         />
         <Text style={[
           styles.typeButtonText,
@@ -267,7 +271,7 @@ const AddTransactionScreen = () => {
           value={amount}
           onChangeText={handleAmountChange}
           placeholder="0.00"
-          placeholderTextColor="#BDC3C7"
+          placeholderTextColor={colors.textLight}
           keyboardType="decimal-pad"
           maxLength={10}
         />
@@ -316,7 +320,7 @@ const AddTransactionScreen = () => {
           ) : (
             <Text style={styles.categorySelectorPlaceholder}>Seleccionar cuenta</Text>
           )}
-          <Ionicons name="chevron-forward" size={20} color="#BDC3C7" />
+          <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
         </TouchableOpacity>
       </View>
 
@@ -327,7 +331,7 @@ const AddTransactionScreen = () => {
           value={title}
           onChangeText={setTitle}
           placeholder="Ej. Supermercado Soriana"
-          placeholderTextColor="#BDC3C7"
+          placeholderTextColor={colors.textLight}
           maxLength={50}
         />
       </View>
@@ -355,7 +359,7 @@ const AddTransactionScreen = () => {
           ) : (
             <Text style={styles.categorySelectorPlaceholder}>Seleccionar categoría</Text>
           )}
-          <Ionicons name="chevron-forward" size={20} color="#BDC3C7" />
+          <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
         </TouchableOpacity>
       </View>
 
@@ -366,7 +370,7 @@ const AddTransactionScreen = () => {
           value={description}
           onChangeText={setDescription}
           placeholder="Descripción opcional..."
-          placeholderTextColor="#BDC3C7"
+          placeholderTextColor={colors.textLight}
           multiline
           numberOfLines={3}
           maxLength={100}
@@ -376,7 +380,7 @@ const AddTransactionScreen = () => {
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>Fecha</Text>
         <View style={styles.dateContainer}>
-          <Ionicons name="calendar" size={20} color="#667eea" />
+          <Ionicons name="calendar" size={20} color={colors.primary} />
           <Text style={styles.dateText}>
             {new Date(date).toLocaleDateString('es-MX', {
               weekday: 'long',
@@ -404,7 +408,7 @@ const AddTransactionScreen = () => {
               Categorías para {transactionType === 'gasto' ? 'Gastos' : 'Ingresos'}
             </Text>
             <TouchableOpacity onPress={() => setShowCategoryModal(false)}>
-              <Ionicons name="close" size={24} color="#2C3E50" />
+              <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
 
@@ -438,7 +442,7 @@ const AddTransactionScreen = () => {
                   {category.name}
                 </Text>
                 {selectedCategory === category.name && (
-                  <Ionicons name="checkmark-circle" size={20} color="#667eea" />
+                  <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
                 )}
               </TouchableOpacity>
             ))}
@@ -460,7 +464,7 @@ const AddTransactionScreen = () => {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Seleccionar Cuenta</Text>
             <TouchableOpacity onPress={() => setShowWalletModal(false)}>
-              <Ionicons name="close" size={24} color="#2C3E50" />
+              <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
 
@@ -500,7 +504,7 @@ const AddTransactionScreen = () => {
                   <Text style={[
                     styles.walletOptionBalance,
                     { 
-                      color: wallet.balance >= 0 ? '#27AE60' : '#E74C3C'
+                      color: wallet.balance >= 0 ? colors.success : colors.error
                     }
                   ]}>
                     Saldo: {wallet.balance >= 0 ? '' : '-'}{formatCurrency(wallet.balance)}
@@ -510,7 +514,7 @@ const AddTransactionScreen = () => {
                   )}
                 </View>
                 {selectedWallet === wallet.id && (
-                  <Ionicons name="checkmark-circle" size={20} color="#667eea" />
+                  <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
                 )}
               </TouchableOpacity>
             ))}
@@ -525,7 +529,10 @@ const AddTransactionScreen = () => {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
+      <StatusBar 
+        barStyle={colors.statusBarStyle} 
+        backgroundColor={colors.background} 
+      />
       
       {renderHeader()}
       
@@ -545,10 +552,10 @@ const AddTransactionScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, isDark }) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background,
   },
   scrollContainer: {
     flex: 1,
@@ -560,35 +567,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 50,
     paddingBottom: 20,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'white',
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: colors.shadowOpacity,
     shadowRadius: 3,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
   },
   saveButton: {
-    backgroundColor: '#667eea',
+    backgroundColor: colors.primary,
     width: 40,
     height: 40,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -597,7 +604,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginHorizontal: 20,
     marginBottom: 25,
-    backgroundColor: '#E8E8E8',
+    backgroundColor: colors.border,
     borderRadius: 12,
     padding: 4,
   },
@@ -610,16 +617,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   typeButtonActiveExpense: {
-    backgroundColor: '#FF6B6B',
+    backgroundColor: colors.error,
   },
   typeButtonActiveIncome: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: colors.success,
   },
   typeButtonText: {
     marginLeft: 8,
     fontSize: 16,
     fontWeight: '600',
-    color: '#7F8C8D',
+    color: colors.textSecondary,
   },
   typeButtonTextActive: {
     color: 'white',
@@ -631,40 +638,40 @@ const styles = StyleSheet.create({
   },
   amountLabel: {
     fontSize: 16,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     marginBottom: 10,
   },
   amountInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     paddingHorizontal: 20,
     paddingVertical: 15,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: colors.shadowOpacity,
     shadowRadius: 3,
     marginBottom: 10,
   },
   currencySymbol: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
     marginRight: 5,
   },
   amountInput: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
     flex: 1,
     textAlign: 'center',
   },
   amountPreview: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#7F8C8D',
+    color: colors.textSecondary,
   },
   formContainer: {
     paddingHorizontal: 20,
@@ -676,20 +683,20 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2C3E50',
+    color: colors.text,
     marginBottom: 8,
   },
   textInput: {
-    backgroundColor: 'white',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     paddingHorizontal: 15,
     paddingVertical: 12,
     fontSize: 16,
-    color: '#2C3E50',
+    color: colors.text,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: colors.shadowOpacity,
     shadowRadius: 3,
   },
   descriptionInput: {
@@ -697,7 +704,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   categorySelector: {
-    backgroundColor: 'white',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     paddingHorizontal: 15,
     paddingVertical: 12,
@@ -705,9 +712,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: colors.shadowOpacity,
     shadowRadius: 3,
   },
   selectedCategoryContainer: {
@@ -724,29 +731,29 @@ const styles = StyleSheet.create({
   },
   selectedCategoryText: {
     fontSize: 16,
-    color: '#2C3E50',
+    color: colors.text,
     fontWeight: '500',
   },
   categorySelectorPlaceholder: {
     fontSize: 16,
-    color: '#BDC3C7',
+    color: colors.textLight,
   },
   dateContainer: {
-    backgroundColor: 'white',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     paddingHorizontal: 15,
     paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: colors.shadowOpacity,
     shadowRadius: 3,
   },
   dateText: {
     fontSize: 16,
-    color: '#2C3E50',
+    color: colors.text,
     marginLeft: 10,
     textTransform: 'capitalize',
   },
@@ -756,7 +763,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingHorizontal: 20,
@@ -769,12 +776,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#E8E8E8',
+    borderBottomColor: colors.border,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
   },
   categoriesGrid: {
     flex: 1,
@@ -785,19 +792,19 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: colors.separator,
   },
   categoryOptionSelected: {
-    backgroundColor: '#667eea10',
+    backgroundColor: colors.primaryLight,
   },
   categoryOptionText: {
     fontSize: 16,
-    color: '#2C3E50',
+    color: colors.text,
     marginLeft: 15,
     flex: 1,
   },
   categoryOptionTextSelected: {
-    color: '#667eea',
+    color: colors.primary,
     fontWeight: '600',
   },
   walletTextContainer: {
@@ -805,7 +812,7 @@ const styles = StyleSheet.create({
   },
   walletBalance: {
     fontSize: 12,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     marginTop: 2,
   },
   walletsGrid: {
@@ -817,7 +824,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: colors.separator,
   },
   walletOptionInfo: {
     flex: 1,
@@ -826,12 +833,12 @@ const styles = StyleSheet.create({
   walletOptionName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2C3E50',
+    color: colors.text,
     marginBottom: 2,
   },
   walletOptionType: {
     fontSize: 13,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     marginBottom: 3,
   },
   walletOptionBalance: {
@@ -841,7 +848,7 @@ const styles = StyleSheet.create({
   },
   walletOptionNumber: {
     fontSize: 12,
-    color: '#95A5A6',
+    color: colors.textLight,
   },
 });
 

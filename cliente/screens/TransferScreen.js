@@ -14,9 +14,13 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext'; // Ajusta la ruta según tu estructura
 
 const TransferScreen = () => {
   const navigation = useNavigation();
+  const { colors, isDark } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [fromAccount, setFromAccount] = useState('');
@@ -220,7 +224,7 @@ const TransferScreen = () => {
         onPress={() => navigation.goBack()}
         style={styles.backButton}
       >
-        <Ionicons name="arrow-back" size={24} color="#2C3E50" />
+        <Ionicons name="arrow-back" size={24} color={colors.text} />
       </TouchableOpacity>
       
       <Text style={styles.headerTitle}>Transferencia</Text>
@@ -229,7 +233,7 @@ const TransferScreen = () => {
         style={styles.helpButton}
         onPress={() => Alert.alert('Ayuda', 'Transfiere dinero entre tus cuentas de forma rápida y segura')}
       >
-        <Ionicons name="help-circle-outline" size={24} color="#7F8C8D" />
+        <Ionicons name="help-circle-outline" size={24} color={colors.textSecondary} />
       </TouchableOpacity>
     </View>
   );
@@ -260,11 +264,11 @@ const TransferScreen = () => {
             </View>
           ) : (
             <View style={styles.placeholderContainer}>
-              <Ionicons name="wallet-outline" size={24} color="#BDC3C7" />
+              <Ionicons name="wallet-outline" size={24} color={colors.textLight} />
               <Text style={styles.selectorPlaceholder}>Seleccionar cuenta</Text>
             </View>
           )}
-          <Ionicons name="chevron-forward" size={20} color="#BDC3C7" />
+          <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
         </TouchableOpacity>
       </View>
     );
@@ -273,18 +277,18 @@ const TransferScreen = () => {
   const renderTransferFlow = () => (
     <View style={styles.transferFlowContainer}>
       <View style={styles.flowStep}>
-        <View style={[styles.flowIcon, { backgroundColor: '#667eea' }]}>
+        <View style={[styles.flowIcon, { backgroundColor: colors.primary }]}>
           <Ionicons name="remove-circle" size={20} color="white" />
         </View>
         <Text style={styles.flowLabel}>De</Text>
       </View>
       
       <View style={styles.flowArrow}>
-        <Ionicons name="arrow-forward" size={24} color="#667eea" />
+        <Ionicons name="arrow-forward" size={24} color={colors.primary} />
       </View>
       
       <View style={styles.flowStep}>
-        <View style={[styles.flowIcon, { backgroundColor: '#4ECDC4' }]}>
+        <View style={[styles.flowIcon, { backgroundColor: colors.success }]}>
           <Ionicons name="add-circle" size={20} color="white" />
         </View>
         <Text style={styles.flowLabel}>Para</Text>
@@ -302,7 +306,7 @@ const TransferScreen = () => {
           value={amount}
           onChangeText={handleAmountChange}
           placeholder="0.00"
-          placeholderTextColor="#BDC3C7"
+          placeholderTextColor={colors.textLight}
           keyboardType="decimal-pad"
           maxLength={10}
         />
@@ -333,7 +337,7 @@ const TransferScreen = () => {
         {transferFee > 0 && (
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Comisión</Text>
-            <Text style={[styles.summaryValue, { color: '#FF6B6B' }]}>
+            <Text style={[styles.summaryValue, { color: colors.error }]}>
               {formatCurrency(transferFee)}
             </Text>
           </View>
@@ -363,7 +367,7 @@ const TransferScreen = () => {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{title}</Text>
               <TouchableOpacity onPress={onClose}>
-                <Ionicons name="close" size={24} color="#2C3E50" />
+                <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
             
@@ -398,7 +402,7 @@ const TransferScreen = () => {
                     )}
                   </View>
                   {selectedId === wallet.id && (
-                    <Ionicons name="checkmark-circle" size={20} color="#667eea" />
+                    <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
                   )}
                 </TouchableOpacity>
               ))}
@@ -415,7 +419,10 @@ const TransferScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
+      <StatusBar 
+        barStyle={colors.statusBarStyle} 
+        backgroundColor={colors.background} 
+      />
       
       {renderHeader()}
       
@@ -453,7 +460,7 @@ const TransferScreen = () => {
               value={description}
               onChangeText={setDescription}
               placeholder="Descripción de la transferencia..."
-              placeholderTextColor="#BDC3C7"
+              placeholderTextColor={colors.textLight}
               maxLength={100}
               multiline
               numberOfLines={2}
@@ -497,10 +504,10 @@ const TransferScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, isDark }) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -509,9 +516,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 50,
     paddingBottom: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E6ED',
+    borderBottomColor: colors.border,
   },
   backButton: {
     padding: 8,
@@ -519,7 +526,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
   },
   helpButton: {
     padding: 8,
@@ -555,7 +562,7 @@ const styles = StyleSheet.create({
   flowLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#2C3E50',
+    color: colors.text,
   },
   flowArrow: {
     marginHorizontal: 30,
@@ -566,17 +573,17 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2C3E50',
+    color: colors.text,
     marginBottom: 8,
   },
   accountSelector: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E0E6ED',
+    borderColor: colors.border,
     borderRadius: 12,
     padding: 15,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
   },
   selectedAccountContainer: {
     flex: 1,
@@ -602,78 +609,78 @@ const styles = StyleSheet.create({
   accountName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2C3E50',
+    color: colors.text,
     marginBottom: 2,
   },
   accountType: {
     fontSize: 13,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     marginBottom: 2,
   },
   accountBalance: {
     fontSize: 12,
-    color: '#667eea',
+    color: colors.primary,
     fontWeight: '500',
   },
   selectorPlaceholder: {
     flex: 1,
     fontSize: 16,
-    color: '#BDC3C7',
+    color: colors.textLight,
     marginLeft: 12,
   },
   amountInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E0E6ED',
+    borderColor: colors.border,
     borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     paddingHorizontal: 15,
   },
   currencySymbol: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
     marginRight: 8,
   },
   amountInput: {
     flex: 1,
     fontSize: 20,
-    color: '#2C3E50',
+    color: colors.text,
     paddingVertical: 15,
     fontWeight: '600',
   },
   amountPreview: {
     fontSize: 14,
-    color: '#667eea',
+    color: colors.primary,
     marginTop: 8,
     fontWeight: '500',
   },
   textInput: {
     borderWidth: 1,
-    borderColor: '#E0E6ED',
+    borderColor: colors.border,
     borderRadius: 12,
     padding: 15,
     fontSize: 16,
-    color: '#2C3E50',
-    backgroundColor: '#FFFFFF',
+    color: colors.text,
+    backgroundColor: colors.surface,
     textAlignVertical: 'top',
   },
   summaryCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 20,
     marginTop: 10,
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: colors.shadowOpacity,
     shadowRadius: 6,
   },
   summaryTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
     marginBottom: 15,
   },
   summaryRow: {
@@ -684,54 +691,54 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 14,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
   },
   summaryValue: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#2C3E50',
+    color: colors.text,
   },
   summaryTotal: {
     borderTopWidth: 1,
-    borderTopColor: '#E0E6ED',
+    borderTopColor: colors.border,
     marginTop: 10,
     paddingTop: 15,
   },
   summaryTotalLabel: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
   },
   summaryTotalValue: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#667eea',
+    color: colors.primary,
   },
   bottomContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     padding: 20,
     borderTopWidth: 1,
-    borderTopColor: '#E0E6ED',
+    borderTopColor: colors.border,
   },
   transferButton: {
-    backgroundColor: '#667eea',
+    backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 16,
     borderRadius: 12,
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },
   transferButtonDisabled: {
-    backgroundColor: '#BDC3C7',
+    backgroundColor: colors.textLight,
   },
   transferButtonText: {
     color: 'white',
@@ -744,7 +751,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '70%',
@@ -755,12 +762,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E6ED',
+    borderBottomColor: colors.border,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
   },
   accountsList: {
     maxHeight: 400,
@@ -770,10 +777,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#F8F9FA',
+    borderBottomColor: colors.separator,
   },
   accountOptionSelected: {
-    backgroundColor: '#667eea10',
+    backgroundColor: colors.primaryLight,
   },
   accountOptionDetails: {
     flex: 1,
@@ -782,23 +789,23 @@ const styles = StyleSheet.create({
   accountOptionName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2C3E50',
+    color: colors.text,
     marginBottom: 2,
   },
   accountOptionType: {
     fontSize: 13,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     marginBottom: 2,
   },
   accountOptionBalance: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#667eea',
+    color: colors.primary,
     marginBottom: 2,
   },
   accountOptionNumber: {
     fontSize: 11,
-    color: '#95A5A6',
+    color: colors.textLight,
   },
 });
 

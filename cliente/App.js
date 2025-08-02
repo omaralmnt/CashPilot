@@ -1,12 +1,15 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
+import { ThemeProvider } from './contexts/ThemeContext'; // Ajusta la ruta según tu estructura
 import MainNavigator from './Navigation/MainNavigator';
+
 export default function App() {
   return (
-    <NavigationContainer>
-      <StatusBar style="dark" />
-      <MainNavigator />
-    </NavigationContainer>
+    <ThemeProvider>
+      <NavigationContainer>
+        <MainNavigator />
+      </NavigationContainer>
+    </ThemeProvider>
   );
 }

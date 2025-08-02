@@ -15,8 +15,12 @@ import {
   Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext'; // Ajusta la ruta según tu estructura
 
 const EditAccountScreen = ({ navigation, route }) => {
+  const { colors, isDark } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  
   // Obtener datos de la cuenta desde route.params o usar datos de ejemplo
   const accountData = route?.params?.account || {
     id: 1,
@@ -60,6 +64,7 @@ const EditAccountScreen = ({ navigation, route }) => {
   };
 
   const colorOptions = [
+    colors.primary, colors.success, colors.error, colors.info, colors.warning,
     '#004481', '#E31837', '#27AE60', '#EC0000', '#003087',
     '#3498DB', '#E74C3C', '#F39C12', '#9B59B6', '#1ABC9C',
     '#34495E', '#16A085', '#2ECC71', '#F1C40F', '#E67E22',
@@ -127,7 +132,7 @@ const EditAccountScreen = ({ navigation, route }) => {
   };
 
   const renderHeader = () => (
-    <View style={styles.header}>
+    <View style={[styles.header, { backgroundColor: formData.color }]}>
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
@@ -187,7 +192,7 @@ const EditAccountScreen = ({ navigation, route }) => {
           value={formData.name}
           onChangeText={(text) => setFormData({...formData, name: text})}
           placeholder="Ej. BBVA Nómina"
-          placeholderTextColor="#BDC3C7"
+          placeholderTextColor={colors.textLight}
         />
       </View>
 
@@ -199,7 +204,7 @@ const EditAccountScreen = ({ navigation, route }) => {
           value={formData.accountNumber}
           onChangeText={(text) => setFormData({...formData, accountNumber: text})}
           placeholder="1234567890"
-          placeholderTextColor="#BDC3C7"
+          placeholderTextColor={colors.textLight}
           keyboardType="numeric"
         />
       </View>
@@ -212,7 +217,7 @@ const EditAccountScreen = ({ navigation, route }) => {
           value={formData.bank}
           onChangeText={(text) => setFormData({...formData, bank: text})}
           placeholder="Ej. BBVA, Banamex, PayPal"
-          placeholderTextColor="#BDC3C7"
+          placeholderTextColor={colors.textLight}
         />
       </View>
 
@@ -226,7 +231,7 @@ const EditAccountScreen = ({ navigation, route }) => {
             value={formData.balance}
             onChangeText={(text) => setFormData({...formData, balance: text.replace(/[^0-9.-]/g, '')})}
             placeholder="0.00"
-            placeholderTextColor="#BDC3C7"
+            placeholderTextColor={colors.textLight}
             keyboardType="decimal-pad"
           />
         </View>
@@ -243,7 +248,7 @@ const EditAccountScreen = ({ navigation, route }) => {
               value={formData.creditLimit}
               onChangeText={(text) => setFormData({...formData, creditLimit: text.replace(/[^0-9.-]/g, '')})}
               placeholder="0.00"
-              placeholderTextColor="#BDC3C7"
+              placeholderTextColor={colors.textLight}
               keyboardType="decimal-pad"
             />
           </View>
@@ -258,7 +263,7 @@ const EditAccountScreen = ({ navigation, route }) => {
           value={formData.description}
           onChangeText={(text) => setFormData({...formData, description: text})}
           placeholder="Descripción opcional de la cuenta"
-          placeholderTextColor="#BDC3C7"
+          placeholderTextColor={colors.textLight}
           multiline={true}
           numberOfLines={3}
         />
@@ -273,7 +278,7 @@ const EditAccountScreen = ({ navigation, route }) => {
         >
           <View style={[styles.colorPreview, { backgroundColor: formData.color }]} />
           <Text style={styles.colorText}>Seleccionar color</Text>
-          <Ionicons name="chevron-forward" size={20} color="#BDC3C7" />
+          <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
         </TouchableOpacity>
       </View>
 
@@ -289,7 +294,7 @@ const EditAccountScreen = ({ navigation, route }) => {
           <Switch
             value={formData.isActive}
             onValueChange={(value) => setFormData({...formData, isActive: value})}
-            trackColor={{ false: '#E0E6ED', true: formData.color }}
+            trackColor={{ false: colors.border, true: formData.color }}
             thumbColor={formData.isActive ? '#FFFFFF' : '#f4f3f4'}
           />
         </View>
@@ -302,7 +307,7 @@ const EditAccountScreen = ({ navigation, route }) => {
           <Switch
             value={formData.includeInTotal}
             onValueChange={(value) => setFormData({...formData, includeInTotal: value})}
-            trackColor={{ false: '#E0E6ED', true: formData.color }}
+            trackColor={{ false: colors.border, true: formData.color }}
             thumbColor={formData.includeInTotal ? '#FFFFFF' : '#f4f3f4'}
           />
         </View>
@@ -322,14 +327,14 @@ const EditAccountScreen = ({ navigation, route }) => {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Seleccionar Color</Text>
             <TouchableOpacity onPress={() => setShowColorModal(false)}>
-              <Ionicons name="close" size={24} color="#2C3E50" />
+              <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
           
           <View style={styles.colorGrid}>
-            {colorOptions.map((color) => (
+            {colorOptions.map((color, index) => (
               <TouchableOpacity
-                key={color}
+                key={index}
                 style={[
                   styles.colorOption,
                   { backgroundColor: color },
@@ -358,7 +363,7 @@ const EditAccountScreen = ({ navigation, route }) => {
         style={styles.deleteButton}
         onPress={handleDelete}
       >
-        <Ionicons name="trash" size={20} color="#E74C3C" />
+        <Ionicons name="trash" size={20} color={colors.error} />
         <Text style={styles.deleteButtonText}>Eliminar cuenta</Text>
       </TouchableOpacity>
       <Text style={styles.dangerNote}>
@@ -396,20 +401,19 @@ const EditAccountScreen = ({ navigation, route }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors, isDark }) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#667eea',
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'ios' ? 10 : 15,
     paddingBottom: 15,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -451,13 +455,13 @@ const styles = StyleSheet.create({
     paddingBottom: 30,
   },
   previewContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     paddingHorizontal: 20,
     paddingVertical: 20,
     marginBottom: 10,
   },
   previewCard: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.surfaceSecondary,
     borderRadius: 15,
     padding: 16,
     borderLeftWidth: 4,
@@ -481,33 +485,33 @@ const styles = StyleSheet.create({
   previewName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
     marginBottom: 2,
   },
   previewType: {
     fontSize: 14,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
   },
   previewBalance: {
     alignItems: 'center',
   },
   previewBalanceLabel: {
     fontSize: 14,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     marginBottom: 4,
   },
   previewBalanceAmount: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
   },
   formContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     marginHorizontal: 20,
     borderRadius: 15,
     padding: 20,
     marginBottom: 20,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -519,15 +523,15 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2C3E50',
+    color: colors.text,
     marginBottom: 8,
   },
   textInput: {
     fontSize: 16,
-    color: '#2C3E50',
-    backgroundColor: '#F8F9FA',
+    color: colors.text,
+    backgroundColor: colors.surfaceSecondary,
     borderWidth: 1,
-    borderColor: '#E0E6ED',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -540,31 +544,31 @@ const styles = StyleSheet.create({
   balanceInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.surfaceSecondary,
     borderWidth: 1,
-    borderColor: '#E0E6ED',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 16,
   },
   currencySymbol: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#667eea',
+    color: colors.primary,
     marginRight: 8,
   },
   balanceInput: {
     flex: 1,
     fontSize: 16,
-    color: '#2C3E50',
+    color: colors.text,
     paddingVertical: 14,
     minHeight: 50,
   },
   colorSelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.surfaceSecondary,
     borderWidth: 1,
-    borderColor: '#E0E6ED',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -576,8 +580,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginRight: 12,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
-    shadowColor: '#000',
+    borderColor: colors.surface,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
@@ -586,7 +590,7 @@ const styles = StyleSheet.create({
   colorText: {
     flex: 1,
     fontSize: 16,
-    color: '#2C3E50',
+    color: colors.text,
   },
   settingsSection: {
     marginTop: 10,
@@ -594,7 +598,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
     marginBottom: 15,
   },
   settingItem: {
@@ -602,7 +606,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: colors.separator,
   },
   settingInfo: {
     flex: 1,
@@ -610,12 +614,12 @@ const styles = StyleSheet.create({
   settingTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2C3E50',
+    color: colors.text,
     marginBottom: 2,
   },
   settingDescription: {
     fontSize: 14,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
   },
   modalOverlay: {
     flex: 1,
@@ -624,7 +628,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   colorModalContent: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 20,
     width: '85%',
@@ -639,7 +643,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: colors.text,
   },
   colorGrid: {
     flexDirection: 'row',
@@ -653,7 +657,7 @@ const styles = StyleSheet.create({
     margin: 5,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -661,17 +665,17 @@ const styles = StyleSheet.create({
   },
   selectedColorOption: {
     borderWidth: 3,
-    borderColor: '#FFFFFF',
+    borderColor: colors.surface,
   },
   dangerZone: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     marginHorizontal: 20,
     borderRadius: 15,
     padding: 20,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#FFE5E5',
-    shadowColor: '#000',
+    borderColor: colors.error + '20',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -680,16 +684,16 @@ const styles = StyleSheet.create({
   dangerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#E74C3C',
+    color: colors.error,
     marginBottom: 15,
   },
   deleteButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFE5E5',
+    backgroundColor: colors.error + '10',
     borderWidth: 1,
-    borderColor: '#E74C3C',
+    borderColor: colors.error,
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 20,
@@ -698,12 +702,12 @@ const styles = StyleSheet.create({
   deleteButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#E74C3C',
+    color: colors.error,
     marginLeft: 8,
   },
   dangerNote: {
     fontSize: 12,
-    color: '#7F8C8D',
+    color: colors.textSecondary,
     textAlign: 'center',
     fontStyle: 'italic',
   },
