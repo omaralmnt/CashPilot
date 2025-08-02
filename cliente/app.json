@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -14,6 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
+      "userInterfaceStyle": "automatic",
       "infoPlist": {
         "NSFaceIDUsageDescription": "CashPilot usa Face ID para un acceso rápido y seguro a tu cuenta",
         "NSCameraUsageDescription": "CashPilot necesita acceso a la cámara para escanear recibos y documentos financieros"
@@ -25,6 +26,7 @@
         "backgroundColor": "#667eea"
       },
       "edgeToEdgeEnabled": true,
+      "userInterfaceStyle": "automatic",
       "permissions": [
         "USE_FINGERPRINT",
         "USE_BIOMETRIC",
