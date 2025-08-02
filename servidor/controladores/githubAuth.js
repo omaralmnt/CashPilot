@@ -125,7 +125,7 @@ router.post('/auth', async (req, res) => {
 
     // Paso 4: Verificar si el usuario existe en la base de datos
     const queryBuscarUsuario = `
-      SELECT id_usuario, nombre, correo FROM usuario WHERE correo = $1
+      SELECT * FROM usuario WHERE correo = $1
     `;
     const resultBuscarUsuario = await pool.query(queryBuscarUsuario, [primaryEmail]);
 
@@ -147,7 +147,7 @@ router.post('/auth', async (req, res) => {
       const queryCrearUsuario = `
         INSERT INTO usuario (nombre, correo, username, password, githublogin)
         VALUES ($1, $2, $3, $4, true)
-        RETURNING id_usuario, nombre, correo
+        RETURNING *
       `;
       
       const nombreUsuario = userResponse.data.name || userResponse.data.login;

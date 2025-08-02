@@ -14,6 +14,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#667eea"
     },
+
     "ios": {
       "supportsTablet": true,
       "userInterfaceStyle": "automatic",
@@ -46,7 +47,9 @@
     "extra": {
       "eas": {
         "projectId": "your-project-id-here"
-      }
+      },
+      "API_URL":"http://172.20.10.2:4000"
     }
   }
 }
+

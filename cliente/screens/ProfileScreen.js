@@ -13,12 +13,16 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useTheme, useThemedStyles } from '../contexts/ThemeContext'; // Ajusta la ruta según tu estructura
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import EditProfileModal from './EditProfileModal';
 
 const ProfileScreen = ({ navigation }) => {
   const [userName, setUserName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+  const [userUsername, setUserUsername] = useState('');
   const [userId, setUserId] = useState('');
   const [showThemeModal, setShowThemeModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   
   // Usar el contexto de tema
   const {
@@ -47,6 +51,8 @@ const ProfileScreen = ({ navigation }) => {
         // Decodificar el JWT para obtener la información del usuario
         const payload = JSON.parse(atob(token.split('.')[1]));
         setUserName(payload.nombre || 'Usuario');
+        setUserEmail(payload.correo || '');
+        setUserUsername(payload.username || '');
         setUserId(payload.id_usuario || '');
       }
     } catch (error) {
@@ -81,6 +87,21 @@ const ProfileScreen = ({ navigation }) => {
         }
       ]
     );
+  };
+
+  const handleEditProfileSuccess = (updatedData) => {
+    // Actualizar la información local cuando se edite el perfil exitosamente
+    setUserName(updatedData.nombre);
+    setUserEmail(updatedData.correo);
+    setUserUsername(updatedData.username);
+    
+    console.log('🔄 Datos del perfil actualizados localmente:', updatedData);
+    
+    // Si el token fue actualizado, recargar información completa
+    if (updatedData.tokenActualizado) {
+      console.log('🔄 Token actualizado, recargando información...');
+      loadUserInfo();
+    }
   };
 
   const getInitials = (name) => {
@@ -207,39 +228,62 @@ const ProfileScreen = ({ navigation }) => {
                 {getInitials(userName)}
               </Text>
             </View>
+            {/* Botón de editar perfil en el avatar */}
+            <TouchableOpacity 
+              style={styles.editProfileButton}
+              onPress={() => setShowEditModal(true)}
+            >
+              <Ionicons name="pencil" size={16} color="white" />
+            </TouchableOpacity>
           </View>
           
           <Text style={styles.userName}>{userName}</Text>
-          <Text style={styles.userSubtitle}>Miembro de CashPilot</Text>
+          {/* <Text style={styles.userSubtitle}>@{userUsername || 'usuario'}</Text> */}
+          {userEmail ? (
+            <Text style={styles.userEmail}>{userEmail}</Text>
+          ) : null}
           <Text style={styles.userInfo}>Gestiona tus finanzas de manera inteligente</Text>
         </View>
 
-        {/* Theme Selection */}
-        <View style={styles.themeSection}>
-          <Text style={styles.sectionTitle}>Apariencia</Text>
+        {/* Options Section */}
+        <View style={styles.optionsSection}>
+          <Text style={styles.sectionTitle}>Configuración</Text>
+          
+          {/* Edit Profile Option */}
           <TouchableOpacity 
-            style={styles.themeSelector}
+            style={styles.optionItem}
+            onPress={() => setShowEditModal(true)}
+          >
+            <View style={styles.optionLeft}>
+              <Ionicons name="person-outline" size={24} color={colors.primary} />
+              <View style={styles.optionText}>
+                <Text style={styles.optionTitle}>Editar Perfil</Text>
+                <Text style={styles.optionSubtitle}>Cambiar información personal y contraseña</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+          
+          {/* Theme Selection */}
+          <TouchableOpacity 
+            style={styles.optionItem}
             onPress={() => setShowThemeModal(true)}
           >
-            <View style={styles.themeSelectorLeft}>
+            <View style={styles.optionLeft}>
               <Ionicons 
                 name={getThemeIcon(themeMode)} 
                 size={24} 
                 color={colors.primary} 
               />
-              <View style={styles.themeSelectorText}>
-                <Text style={styles.themeSelectorTitle}>Tema</Text>
-                <Text style={styles.themeSelectorSubtitle}>
+              <View style={styles.optionText}>
+                <Text style={styles.optionTitle}>Tema</Text>
+                <Text style={styles.optionSubtitle}>
                   {getThemeDisplayName(themeMode)}
                   {themeMode === 'system' && ` (${currentTheme === 'dark' ? 'Oscuro' : 'Claro'})`}
                 </Text>
               </View>
             </View>
-            <Ionicons 
-              name="chevron-forward" 
-              size={20} 
-              color={colors.textSecondary} 
-            />
+            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -284,7 +328,13 @@ const ProfileScreen = ({ navigation }) => {
         </View>
       </ScrollView>
 
+      {/* Modals */}
       <ThemeModal />
+      <EditProfileModal 
+        visible={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSuccess={handleEditProfileSuccess}
+      />
     </View>
   );
 };
@@ -316,6 +366,13 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     fontSize: 12,
     opacity: 0.7,
   },
+  scrollContainer: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 20,
+  },
   profileCard: {
     margin: 20,
     padding: 30,
@@ -329,6 +386,7 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     shadowRadius: 8,
   },
   avatarContainer: {
+    position: 'relative',
     marginBottom: 20,
   },
   avatar: {
@@ -346,6 +404,24 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
   },
+  editProfileButton: {
+    position: 'absolute',
+    bottom: -5,
+    right: -5,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.surface,
+    elevation: 3,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+  },
   userName: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -357,6 +433,11 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     fontSize: 16,
     color: colors.primary,
     fontWeight: '600',
+    marginBottom: 5,
+  },
+  userEmail: {
+    fontSize: 14,
+    color: colors.textSecondary,
     marginBottom: 10,
   },
   userInfo: {
@@ -365,7 +446,7 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
-  themeSection: {
+  optionsSection: {
     margin: 20,
     marginTop: 10,
   },
@@ -375,7 +456,7 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     color: colors.text,
     marginBottom: 15,
   },
-  themeSelector: {
+  optionItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -383,26 +464,27 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 20,
     borderRadius: 15,
+    marginBottom: 10,
     elevation: 2,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: colors.shadowOpacity,
     shadowRadius: 3,
   },
-  themeSelectorLeft: {
+  optionLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
-  themeSelectorText: {
+  optionText: {
     marginLeft: 15,
   },
-  themeSelectorTitle: {
+  optionTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: colors.text,
   },
-  themeSelectorSubtitle: {
+  optionSubtitle: {
     fontSize: 14,
     color: colors.textSecondary,
     marginTop: 2,
@@ -464,7 +546,7 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
   },
   logoutContainer: {
     margin: 20,
-    marginBottom: 30, // Espacio extra al final
+    marginBottom: 30,
   },
   logoutButton: {
     flexDirection: 'row',
@@ -488,15 +570,7 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     fontWeight: '600',
     marginLeft: 8,
   },
-  // ScrollView styles
-  scrollContainer: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: 20, // Espacio extra al final del scroll
-  },
-  // Modal styles
+  // Modal styles para el ThemeModal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',

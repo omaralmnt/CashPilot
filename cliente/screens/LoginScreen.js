@@ -24,7 +24,7 @@ WebBrowser.maybeCompleteAuthSession();
 
 // Configuración del backend
 const CLIENT_ID = 'Ov23liFToTnnnJWBxjcg';
-const API_BASE_URL = 'http://192.168.137.1:4000'; // Cambia esta IP por la de tu servidor
+const API_BASE_URL = Constants.expoConfig?.extra?.API_URL;// Cambia esta IP por la de tu servidor
 
 const LoginScreen = ({ navigation }) => {
   const { colors, isDark } = useTheme();
@@ -32,6 +32,7 @@ const LoginScreen = ({ navigation }) => {
   
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -41,7 +42,7 @@ const LoginScreen = ({ navigation }) => {
   const [hasStoredCredentials, setHasStoredCredentials] = useState(false);
 
   // Configuración que funciona inmediatamente - usar la IP actual
-  const redirectUri = 'exp://192.168.100.155:8081';
+  const redirectUri = 'exp://172.20.10.2:8081';
 
   // DEBUG: Ver qué redirect URI se está usando (solo una vez)
   useEffect(() => {
@@ -67,12 +68,7 @@ const LoginScreen = ({ navigation }) => {
 
   // Handle GitHub OAuth response
   useEffect(() => {
-    // console.log('🔍 RESPONSE OBJETO:', response);
-    
     if (response?.type === 'success') {
-      // console.log('✅ ÉXITO EN OAUTH - Código recibido:', response.params.code);
-      // console.log('🔐 Code verifier disponible:', request?.codeVerifier ? 'Sí' : 'No');
-      
       const { code } = response.params;
       const codeVerifier = request?.codeVerifier;
       
@@ -135,8 +131,6 @@ const LoginScreen = ({ navigation }) => {
         disableDeviceFallback: false, // Permite fallback a código si Face ID falla
       });
 
-      // console.log('Authentication result:', result);
-
       if (result.success) {
         // Si hay warning sobre Face ID en Expo Go, simplemente continuar
         if (result.warning) {
@@ -175,6 +169,12 @@ const LoginScreen = ({ navigation }) => {
     }
   };
 
+  // Función de validación de email
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const validateInput = () => {
     if (!username.trim()) {
       Alert.alert('Error', 'Por favor ingresa un nombre de usuario');
@@ -184,6 +184,19 @@ const LoginScreen = ({ navigation }) => {
     if (username.length < 3) {
       Alert.alert('Error', 'El nombre de usuario debe tener al menos 3 caracteres');
       return false;
+    }
+
+    // Validar email solo en registro
+    if (!isLogin) {
+      if (!email.trim()) {
+        Alert.alert('Error', 'Por favor ingresa un correo electrónico');
+        return false;
+      }
+
+      if (!validateEmail(email.trim())) {
+        Alert.alert('Error', 'Por favor ingresa un correo electrónico válido');
+        return false;
+      }
     }
 
     if (!password) {
@@ -204,7 +217,7 @@ const LoginScreen = ({ navigation }) => {
     return true;
   };
 
-  // Nueva función para hacer login con el backend
+  // Función para hacer login con el backend
   const handleLogin = async () => {
     if (!validateInput()) return;
 
@@ -229,6 +242,7 @@ const LoginScreen = ({ navigation }) => {
         const userData = {
           token: data.token,
           username: username.trim(),
+          email: data.email, // El backend debería devolver el email
           loginTime: new Date().toISOString(),
         };
 
@@ -258,43 +272,46 @@ const LoginScreen = ({ navigation }) => {
     }
   };
 
-  // Función de registro (mantener la lógica local por ahora)
+  // Función de registro actualizada para usar el backend
   const handleRegister = async () => {
     if (!validateInput()) return;
 
     setLoading(true);
     
     try {
-      // Simulación de delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const users = await AsyncStorage.getItem('users');
-      const userList = users ? JSON.parse(users) : [];
-      
-      const existingUser = userList.find(u => u.username === username);
-      if (existingUser) {
-        Alert.alert('Error', 'El nombre de usuario ya está en uso');
-        setLoading(false);
-        return;
+      const response = await fetch(`${API_BASE_URL}/api/usuario/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: username.trim(),
+          email: email.trim(),
+          password: password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Registro exitoso - guardar token y datos del usuario
+  
+        
+        Alert.alert(
+          'Éxito', 
+          'Cuenta creada exitosamente',
+          [{ text: 'OK'}]
+        );
+      } else {
+        // Error en el registro
+        Alert.alert('Error', data.error || 'Error al crear la cuenta');
       }
-      
-      const newUser = {
-        id: Date.now().toString(),
-        username,
-        password,
-        createdAt: new Date().toISOString(),
-      };
-      
-      userList.push(newUser);
-      await AsyncStorage.setItem('users', JSON.stringify(userList));
-      await AsyncStorage.setItem('currentUser', JSON.stringify(newUser));
-      
-      // Activar biométrico automáticamente para futuros logins
-      setHasStoredCredentials(true);
-      
-      navigation.replace('MainTabs');
     } catch (error) {
-      Alert.alert('Error', 'Ocurrió un error al registrar el usuario');
+      console.error('Error de conexión:', error);
+      Alert.alert(
+        'Error de conexión', 
+        'No se pudo conectar al servidor. Verifica tu conexión a internet y que el servidor esté funcionando.'
+      );
     } finally {
       setLoading(false);
     }
@@ -302,15 +319,12 @@ const LoginScreen = ({ navigation }) => {
 
   // Fixed GitHub login function
   const handleGitHubLogin = async () => {
-    // console.log('🚀 Iniciando GitHub login...');
     console.log('🔍 CLIENT_ID:', CLIENT_ID);
     console.log('🔍 REDIRECT URI FINAL:', redirectUri);
     
     setLoading(true);
     try {
-      // console.log('📱 Llamando a promptAsync...');
       const result = await promptAsync();
-      // console.log('📋 Resultado de promptAsync:', result);
     } catch (error) {
       console.error('❌ Error iniciating GitHub login:', error);
       Alert.alert('Error', 'No se pudo iniciar sesión con GitHub. Inténtalo de nuevo.');
@@ -321,11 +335,6 @@ const LoginScreen = ({ navigation }) => {
   // Handle the GitHub authorization code
   const handleGitHubAuthCode = async (code, codeVerifier) => {
     try {
-      // console.log('📤 Enviando datos al backend:', {
-      //   code: code ? code.substring(0, 10) + '...' : 'No presente',
-      //   codeVerifier: codeVerifier ? 'Presente' : 'No presente'
-      // });
-
       // Preparar los datos para enviar
       const requestData = { code };
       
@@ -388,6 +397,18 @@ const LoginScreen = ({ navigation }) => {
     }
   };
 
+  // Función para limpiar campos al cambiar entre login y registro
+  const handleToggleMode = (loginMode) => {
+    setIsLogin(loginMode);
+    // Limpiar campos cuando cambie de modo
+    setUsername('');
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar 
@@ -427,7 +448,7 @@ const LoginScreen = ({ navigation }) => {
                   styles.toggleButton,
                   isLogin && styles.toggleButtonActive
                 ]}
-                onPress={() => setIsLogin(true)}
+                onPress={() => handleToggleMode(true)}
               >
                 <Text style={[
                   styles.toggleButtonText,
@@ -441,7 +462,7 @@ const LoginScreen = ({ navigation }) => {
                   styles.toggleButton,
                   !isLogin && styles.toggleButtonActive
                 ]}
-                onPress={() => setIsLogin(false)}
+                onPress={() => handleToggleMode(false)}
               >
                 <Text style={[
                   styles.toggleButtonText,
@@ -466,6 +487,22 @@ const LoginScreen = ({ navigation }) => {
                   autoCorrect={false}
                 />
               </View>
+
+              {!isLogin && (
+                <View style={styles.inputWrapper}>
+                  <Ionicons name="mail-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="Correo electrónico"
+                    placeholderTextColor={colors.textLight}
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardType="email-address"
+                  />
+                </View>
+              )}
 
               <View style={styles.inputWrapper}>
                 <Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
