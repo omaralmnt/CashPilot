@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,10 +11,15 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useTheme, useThemedStyles } from '../contexts/ThemeContext'; // Ajusta la ruta según tu estructura
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import Constants from 'expo-constants';
+
+const API_BASE_URL = Constants.expoConfig?.extra?.API_URL;
 
 const AddWalletScreen = () => {
   const navigation = useNavigation();
@@ -25,15 +30,26 @@ const AddWalletScreen = () => {
   const [accountName, setAccountName] = useState('');
   const [initialBalance, setInitialBalance] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
-  const [bankName, setBankName] = useState('');
-  const [creditLimit, setCreditLimit] = useState('');
-  const [selectedColor, setSelectedColor] = useState(colors.primary);
+  const [selectedBank, setSelectedBank] = useState(null);
+  const [selectedTipoCuenta, setSelectedTipoCuenta] = useState(null);
+  const [selectedColor, setSelectedColor] = useState(null);
   const [notes, setNotes] = useState('');
   const [showTypeModal, setShowTypeModal] = useState(false);
   const [showBankModal, setShowBankModal] = useState(false);
+  const [showTipoCuentaModal, setShowTipoCuentaModal] = useState(false);
   const [showColorModal, setShowColorModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  // Tipos de cuenta disponibles
+  // Estados para datos de la API
+  const [bancos, setBancos] = useState([]);
+  const [tiposCuenta, setTiposCuenta] = useState([]);
+  const [colores, setColores] = useState([]);
+
+  // ID del usuario autenticado desde AsyncStorage
+  const [userId, setUserId] = useState(null);
+
+  // Tipos de cuenta disponibles (categorías principales)
   const accountTypes = [
     { 
       type: 'bank', 
@@ -72,31 +88,88 @@ const AddWalletScreen = () => {
     },
   ];
 
-  // Bancos populares en República Dominicana
-  const banks = [
-    'Banco Popular Dominicano',
-    'Banco de Reservas',
-    'Banco BHD León',
-    'Banco Santander',
-    'Banco Múltiple López de Haro',
-    'Banco Promerica',
-    'Banco Caribe',
-    'Scotiabank',
-    'Citibank',
-    'Banco del Progreso',
-    'Asociación Popular de Ahorros y Préstamos',
-    'Otro'
-  ];
+  useEffect(() => {
+    getUserIdAndLoadData();
+  }, []);
 
-  // Colores disponibles para las cuentas
-  const themeColors = [
-    colors.primary, colors.success, colors.error, colors.info, colors.warning,
-    '#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b',
-    '#38ef7d', '#fad961', '#f76b1c', '#fa709a', '#fee140',
-    '#e94c6f', '#667eea', '#764ba2', '#f093fb', '#4facfe',
-    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-    '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
-  ];
+  const getUserIdAndLoadData = async () => {
+    try {
+      setLoading(true);
+      const token = await AsyncStorage.getItem('currentUser');
+      
+      if (token) {
+        // Decodificar el JWT para obtener el payload
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const userIdFromToken = payload.id_usuario || payload.id || payload.userId || payload.user_id;
+        
+        if (userIdFromToken) {
+          setUserId(userIdFromToken);
+          await loadInitialData();
+        } else {
+          Alert.alert('Error', 'No se pudo obtener la información del usuario del token');
+          navigation.goBack();
+        }
+      } else {
+        Alert.alert('Error', 'Token de usuario no encontrado');
+        navigation.goBack();
+      }
+    } catch (error) {
+      console.error('Error decoding JWT:', error);
+      Alert.alert('Error', 'Error al procesar el token de usuario');
+      navigation.goBack();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadInitialData = async () => {
+    try {
+      await Promise.all([
+        fetchBancos(),
+        fetchTiposCuenta(),
+        fetchColores()
+      ]);
+    } catch (error) {
+      console.error('Error loading initial data:', error);
+      Alert.alert('Error', 'No se pudieron cargar los datos necesarios');
+    }
+  };
+
+  const fetchBancos = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/cuenta/bancos`);
+      if (response.ok) {
+        const data = await response.json();
+        setBancos(data.bancos || []);
+      }
+    } catch (error) {
+      console.error('Error fetching bancos:', error);
+    }
+  };
+
+  const fetchTiposCuenta = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/cuenta/tipos-cuenta`);
+      if (response.ok) {
+        const data = await response.json();
+        setTiposCuenta(data.tipos || []);
+      }
+    } catch (error) {
+      console.error('Error fetching tipos cuenta:', error);
+    }
+  };
+
+  const fetchColores = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/cuenta/colores`);
+      if (response.ok) {
+        const data = await response.json();
+        setColores(data.colores || []);
+      }
+    } catch (error) {
+      console.error('Error fetching colores:', error);
+    }
+  };
 
   const formatAmount = (text) => {
     const cleaned = text.replace(/[^0-9.]/g, '');
@@ -110,11 +183,6 @@ const AddWalletScreen = () => {
   const handleBalanceChange = (text) => {
     const formatted = formatAmount(text);
     setInitialBalance(formatted);
-  };
-
-  const handleCreditLimitChange = (text) => {
-    const formatted = formatAmount(text);
-    setCreditLimit(formatted);
   };
 
   const getSelectedAccountType = () => {
@@ -132,54 +200,81 @@ const AddWalletScreen = () => {
       return false;
     }
 
-    if (accountType === 'bank' && !bankName) {
+    if (!selectedTipoCuenta) {
+      Alert.alert('Error', 'Por favor selecciona el tipo específico de cuenta');
+      return false;
+    }
+
+    if (accountType === 'bank' && !selectedBank) {
       Alert.alert('Error', 'Por favor selecciona el banco');
       return false;
     }
 
-    if (accountType === 'credit') {
-      if (!creditLimit || parseFloat(creditLimit) <= 0) {
-        Alert.alert('Error', 'Por favor ingresa un límite de crédito válido');
-        return false;
-      }
-    } else {
-      if (!initialBalance || parseFloat(initialBalance) < 0) {
-        Alert.alert('Error', 'Por favor ingresa un saldo inicial válido');
-        return false;
-      }
+    if (!selectedColor) {
+      Alert.alert('Error', 'Por favor selecciona un color para la cuenta');
+      return false;
+    }
+
+    if (!initialBalance || parseFloat(initialBalance) < 0) {
+      Alert.alert('Error', 'Por favor ingresa un saldo inicial válido');
+      return false;
     }
 
     return true;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm()) return;
 
-    const selectedTypeData = getSelectedAccountType();
-    
-    const newWallet = {
-      id: Date.now(),
-      name: accountName.trim(),
-      type: accountType,
-      accountType: selectedTypeData.name,
-      balance: accountType === 'credit' ? 0 : parseFloat(initialBalance),
-      creditLimit: accountType === 'credit' ? parseFloat(creditLimit) : null,
-      accountNumber: accountNumber.trim(),
-      bankName: bankName,
-      color: selectedColor,
-      icon: selectedTypeData.icon,
-      notes: notes.trim(),
-      isActive: true,
-      createdAt: new Date().toISOString(),
-    };
+    if (!userId) {
+      Alert.alert('Error', 'No se pudo obtener la información del usuario');
+      return;
+    }
 
-    console.log('Nueva cuenta:', newWallet);
-    
-    Alert.alert(
-      'Éxito', 
-      'Cuenta agregada correctamente',
-      [{ text: 'OK', onPress: () => navigation.goBack() }]
-    );
+    setSaving(true);
+    try {
+      const cuentaData = {
+        descripcion: accountName.trim(),
+        numero: accountNumber.trim() || null,
+        saldo: parseFloat(initialBalance) || 0,
+        nota: notes.trim() || null,
+        id_banco: selectedBank?.id_banco || 1, // Default banco si no aplica
+        id_tipo_cuenta: selectedTipoCuenta.id_tipo_cuenta,
+        id_color: selectedColor.id_color,
+        id_usuario: userId
+      };
+
+      const response = await fetch(`${API_BASE_URL}/api/cuenta/crear`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(cuentaData),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        Alert.alert(
+          'Éxito', 
+          'Cuenta creada correctamente',
+          [{ 
+            text: 'OK', 
+            onPress: () => navigation.goBack() 
+          }]
+        );
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al crear la cuenta');
+      }
+    } catch (error) {
+      console.error('Error creating account:', error);
+      Alert.alert(
+        'Error',
+        error.message || 'No se pudo crear la cuenta. Por favor, intenta de nuevo.'
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   const renderHeader = () => (
@@ -194,17 +289,22 @@ const AddWalletScreen = () => {
       <Text style={styles.headerTitle}>Agregar Cuenta</Text>
       
       <TouchableOpacity 
-        style={styles.saveButton}
+        style={[styles.saveButton, saving && { opacity: 0.7 }]}
         onPress={handleSave}
+        disabled={saving}
       >
-        <Ionicons name="checkmark" size={24} color="white" />
+        {saving ? (
+          <ActivityIndicator size="small" color="white" />
+        ) : (
+          <Ionicons name="checkmark" size={24} color="white" />
+        )}
       </TouchableOpacity>
     </View>
   );
 
   const renderAccountTypeSelector = () => (
     <View style={styles.formGroup}>
-      <Text style={styles.inputLabel}>Tipo de Cuenta *</Text>
+      <Text style={styles.inputLabel}>Categoría de Cuenta *</Text>
       <TouchableOpacity
         style={styles.selector}
         onPress={() => setShowTypeModal(true)}
@@ -224,8 +324,23 @@ const AddWalletScreen = () => {
             </View>
           </View>
         ) : (
-          <Text style={styles.selectorPlaceholder}>Seleccionar tipo de cuenta</Text>
+          <Text style={styles.selectorPlaceholder}>Seleccionar categoría</Text>
         )}
+        <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderTipoCuentaSelector = () => (
+    <View style={styles.formGroup}>
+      <Text style={styles.inputLabel}>Tipo de Cuenta *</Text>
+      <TouchableOpacity
+        style={styles.selector}
+        onPress={() => setShowTipoCuentaModal(true)}
+      >
+        <Text style={selectedTipoCuenta ? styles.selectedText : styles.selectorPlaceholder}>
+          {selectedTipoCuenta?.descripcion || 'Seleccionar tipo específico'}
+        </Text>
         <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
       </TouchableOpacity>
     </View>
@@ -252,8 +367,8 @@ const AddWalletScreen = () => {
             style={styles.selector}
             onPress={() => setShowBankModal(true)}
           >
-            <Text style={bankName ? styles.selectedText : styles.selectorPlaceholder}>
-              {bankName || 'Seleccionar banco'}
+            <Text style={selectedBank ? styles.selectedText : styles.selectorPlaceholder}>
+              {selectedBank?.descripcion || 'Seleccionar banco'}
             </Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
           </TouchableOpacity>
@@ -284,68 +399,45 @@ const AddWalletScreen = () => {
   );
 
   const renderAmountInputs = () => (
-    <>
-      {accountType === 'credit' ? (
-        <View style={styles.formGroup}>
-          <Text style={styles.inputLabel}>Límite de Crédito *</Text>
-          <View style={styles.amountInputContainer}>
-            <Text style={styles.currencySymbol}>$</Text>
-            <TextInput
-              style={styles.amountInput}
-              value={creditLimit}
-              onChangeText={handleCreditLimitChange}
-              placeholder="50,000.00"
-              placeholderTextColor={colors.textLight}
-              keyboardType="decimal-pad"
-              maxLength={10}
-            />
-          </View>
-          {creditLimit && (
-            <Text style={styles.amountPreview}>
-              Límite: ${parseFloat(creditLimit || 0).toLocaleString('es-MX', { 
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2 
-              })}
-            </Text>
-          )}
-        </View>
-      ) : (
-        <View style={styles.formGroup}>
-          <Text style={styles.inputLabel}>Saldo Inicial *</Text>
-          <View style={styles.amountInputContainer}>
-            <Text style={styles.currencySymbol}>$</Text>
-            <TextInput
-              style={styles.amountInput}
-              value={initialBalance}
-              onChangeText={handleBalanceChange}
-              placeholder="0.00"
-              placeholderTextColor={colors.textLight}
-              keyboardType="decimal-pad"
-              maxLength={10}
-            />
-          </View>
-          {initialBalance && (
-            <Text style={styles.amountPreview}>
-              Saldo: ${parseFloat(initialBalance || 0).toLocaleString('es-MX', { 
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2 
-              })}
-            </Text>
-          )}
-        </View>
+    <View style={styles.formGroup}>
+      <Text style={styles.inputLabel}>Saldo Inicial *</Text>
+      <View style={styles.amountInputContainer}>
+        <Text style={styles.currencySymbol}>$</Text>
+        <TextInput
+          style={styles.amountInput}
+          value={initialBalance}
+          onChangeText={handleBalanceChange}
+          placeholder="0.00"
+          placeholderTextColor={colors.textLight}
+          keyboardType="decimal-pad"
+          maxLength={10}
+        />
+      </View>
+      {initialBalance && (
+        <Text style={styles.amountPreview}>
+          Saldo: ${parseFloat(initialBalance || 0).toLocaleString('es-MX', { 
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2 
+          })}
+        </Text>
       )}
-    </>
+    </View>
   );
 
   const renderColorSelector = () => (
     <View style={styles.formGroup}>
-      <Text style={styles.inputLabel}>Color de la Cuenta</Text>
+      <Text style={styles.inputLabel}>Color de la Cuenta *</Text>
       <TouchableOpacity
         style={styles.colorSelector}
         onPress={() => setShowColorModal(true)}
       >
-        <View style={[styles.colorPreview, { backgroundColor: selectedColor }]} />
-        <Text style={styles.colorText}>Personalizar color</Text>
+        <View style={[
+          styles.colorPreview, 
+          { backgroundColor: selectedColor?.codigo_hex || colors.primary }
+        ]} />
+        <Text style={styles.colorText}>
+          {selectedColor?.descripcion || 'Seleccionar color'}
+        </Text>
         <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
       </TouchableOpacity>
     </View>
@@ -373,7 +465,7 @@ const AddWalletScreen = () => {
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Tipo de Cuenta</Text>
+            <Text style={styles.modalTitle}>Categoría de Cuenta</Text>
             <TouchableOpacity onPress={() => setShowTypeModal(false)}>
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
@@ -386,13 +478,11 @@ const AddWalletScreen = () => {
                 style={styles.modalOption}
                 onPress={() => {
                   setAccountType(type.type);
-                  setSelectedColor(type.color);
                   setShowTypeModal(false);
-                  // Reset specific fields when changing type
-                  setBankName('');
+                  // Reset dependent fields
+                  setSelectedBank(null);
+                  setSelectedTipoCuenta(null);
                   setAccountNumber('');
-                  setInitialBalance('');
-                  setCreditLimit('');
                 }}
               >
                 <View style={[styles.typeIcon, { backgroundColor: type.color + '20' }]}>
@@ -403,6 +493,39 @@ const AddWalletScreen = () => {
                   <Text style={styles.optionDescription}>{type.description}</Text>
                 </View>
                 {accountType === type.type && (
+                  <Ionicons name="checkmark" size={20} color={colors.success} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  const renderTipoCuentaModal = () => (
+    <Modal visible={showTipoCuentaModal} transparent animationType="slide">
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Tipo de Cuenta</Text>
+            <TouchableOpacity onPress={() => setShowTipoCuentaModal(false)}>
+              <Ionicons name="close" size={24} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.modalList}>
+            {tiposCuenta.map((tipo) => (
+              <TouchableOpacity
+                key={tipo.id_tipo_cuenta}
+                style={styles.modalOption}
+                onPress={() => {
+                  setSelectedTipoCuenta(tipo);
+                  setShowTipoCuentaModal(false);
+                }}
+              >
+                <Text style={styles.bankOptionText}>{tipo.descripcion}</Text>
+                {selectedTipoCuenta?.id_tipo_cuenta === tipo.id_tipo_cuenta && (
                   <Ionicons name="checkmark" size={20} color={colors.success} />
                 )}
               </TouchableOpacity>
@@ -425,17 +548,17 @@ const AddWalletScreen = () => {
           </View>
           
           <ScrollView style={styles.modalList}>
-            {banks.map((bank) => (
+            {bancos.map((banco) => (
               <TouchableOpacity
-                key={bank}
+                key={banco.id_banco}
                 style={styles.modalOption}
                 onPress={() => {
-                  setBankName(bank);
+                  setSelectedBank(banco);
                   setShowBankModal(false);
                 }}
               >
-                <Text style={styles.bankOptionText}>{bank}</Text>
-                {bankName === bank && (
+                <Text style={styles.bankOptionText}>{banco.descripcion}</Text>
+                {selectedBank?.id_banco === banco.id_banco && (
                   <Ionicons name="checkmark" size={20} color={colors.success} />
                 )}
               </TouchableOpacity>
@@ -458,20 +581,20 @@ const AddWalletScreen = () => {
           </View>
           
           <View style={styles.colorGrid}>
-            {themeColors.map((color, index) => (
+            {colores.map((color) => (
               <TouchableOpacity
-                key={index}
+                key={color.id_color}
                 style={[
                   styles.colorOption,
-                  { backgroundColor: color },
-                  selectedColor === color && styles.selectedColorOption
+                  { backgroundColor: color.codigo_hex },
+                  selectedColor?.id_color === color.id_color && styles.selectedColorOption
                 ]}
                 onPress={() => {
                   setSelectedColor(color);
                   setShowColorModal(false);
                 }}
               >
-                {selectedColor === color && (
+                {selectedColor?.id_color === color.id_color && (
                   <Ionicons name="checkmark" size={20} color="white" />
                 )}
               </TouchableOpacity>
@@ -481,6 +604,21 @@ const AddWalletScreen = () => {
       </View>
     </Modal>
   );
+
+  if (loading || !userId) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <StatusBar 
+          barStyle={colors.statusBarStyle} 
+          backgroundColor={colors.background} 
+        />
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+          {!userId ? 'Cargando usuario...' : 'Cargando formulario...'}
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -505,6 +643,7 @@ const AddWalletScreen = () => {
           
           {accountType && (
             <>
+              {renderTipoCuentaSelector()}
               {renderBasicInfo()}
               {renderAmountInputs()}
               {renderColorSelector()}
@@ -515,6 +654,7 @@ const AddWalletScreen = () => {
       </KeyboardAvoidingView>
       
       {renderTypeModal()}
+      {renderTipoCuentaModal()}
       {renderBankModal()}
       {renderColorModal()}
     </View>
@@ -525,6 +665,14 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
   },
   header: {
     flexDirection: 'row',

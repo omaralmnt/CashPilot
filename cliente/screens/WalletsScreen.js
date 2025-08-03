@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,17 @@ import {
   Modal,
   Alert,
   Dimensions,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { useTheme, useThemedStyles } from '../contexts/ThemeContext'; // Ajusta la ruta según tu estructura
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import Constants from 'expo-constants';
 
 const { width } = Dimensions.get('window');
+const API_BASE_URL = Constants.expoConfig?.extra?.API_URL;
 
 const WalletsScreen = () => {
   const navigation = useNavigation();
@@ -22,70 +27,183 @@ const WalletsScreen = () => {
   const styles = useThemedStyles(createStyles);
   
   const [showAddModal, setShowAddModal] = useState(false);
-  
-  const handleEditWallet = (wallet) => {
-    navigation.navigate('EditAccount', { account: wallet });
+  const [wallets, setWallets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [userId, setUserId] = useState(null);
+
+  // Cargar cuentas cuando la pantalla se enfoca
+  useFocusEffect(
+    React.useCallback(() => {
+      getUserIdAndFetchWallets();
+    }, [])
+  );
+
+  const getUserIdAndFetchWallets = async () => {
+    try {
+      setLoading(true);
+      const token = await AsyncStorage.getItem('currentUser');
+      
+      if (token) {
+        // Decodificar el JWT para obtener el payload
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const userIdFromToken = payload.id_usuario || payload.id || payload.userId || payload.user_id;
+        
+        if (userIdFromToken) {
+          setUserId(userIdFromToken);
+          await fetchWalletsForUser(userIdFromToken);
+        } else {
+          Alert.alert('Error', 'No se pudo obtener la información del usuario del token');
+        }
+      } else {
+        Alert.alert('Error', 'Token de usuario no encontrado');
+      }
+    } catch (error) {
+      console.error('Error decoding JWT:', error);
+      Alert.alert('Error', 'Error al procesar el token de usuario');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Datos de ejemplo de cuentas/wallets
-  const [wallets, setWallets] = useState([
-    {
-      id: 1,
-      name: 'BBVA Bancomer',
-      type: 'bank',
-      accountType: 'Cuenta de Débito',
-      balance: 15750.50,
-      accountNumber: '****1234',
-      color: '#004481',
-      icon: 'card',
-      isActive: true,
-    },
-    {
-      id: 2,
-      name: 'Banamex Platino',
-      type: 'credit',
-      accountType: 'Tarjeta de Crédito',
-      balance: -3250.00,
-      creditLimit: 50000,
-      accountNumber: '****5678',
-      color: '#E31837',
-      icon: 'card',
-      isActive: true,
-    },
-    {
-      id: 3,
-      name: 'Efectivo',
-      type: 'cash',
-      accountType: 'Dinero en Efectivo',
-      balance: 850.00,
-      accountNumber: '',
-      color: '#27AE60',
-      icon: 'cash',
-      isActive: true,
-    },
-    {
-      id: 4,
-      name: 'Santander Débito',
-      type: 'bank',
-      accountType: 'Cuenta de Débito',
-      balance: 8420.75,
-      accountNumber: '****9012',
-      color: '#EC0000',
-      icon: 'card',
-      isActive: true,
-    },
-    {
-      id: 5,
-      name: 'PayPal',
-      type: 'digital',
-      accountType: 'Monedero Digital',
-      balance: 2150.30,
-      accountNumber: 'usuario@email.com',
-      color: '#003087',
-      icon: 'phone-portrait',
-      isActive: true,
-    },
-  ]);
+  const fetchWallets = async () => {
+    if (!userId) {
+      await getUserIdAndFetchWallets();
+      return;
+    }
+    await fetchWalletsForUser(userId);
+  };
+
+  const fetchWalletsForUser = async (userIdToUse) => {
+    try {
+      if (!userIdToUse) return;
+      
+      const response = await fetch(`${API_BASE_URL}/api/cuenta/cuentas/usuario/${userIdToUse}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Transformar los datos de la API al formato que espera el componente
+        const transformedWallets = data.cuentas.map(cuenta => ({
+          id: cuenta.id_cuenta,
+          name: cuenta.descripcion,
+          type: mapAccountType(cuenta.tipo_cuenta),
+          accountType: cuenta.tipo_cuenta,
+          balance: parseFloat(cuenta.saldo || 0),
+          accountNumber: cuenta.numero || '',
+          color: cuenta.codigo_hex || getColorFromName(cuenta.color),
+          icon: getIconFromType(cuenta.tipo_cuenta),
+          isActive: cuenta.positivo,
+          bankName: cuenta.nombre_banco,
+          note: cuenta.nota,
+        }));
+        setWallets(transformedWallets);
+      } else if (response.status === 404) {
+        // No hay cuentas para este usuario
+        setWallets([]);
+      } else {
+        throw new Error('Error al cargar las cuentas');
+      }
+    } catch (error) {
+      console.error('Error fetching wallets:', error);
+      Alert.alert(
+        'Error',
+        'No se pudieron cargar las cuentas. Por favor, intenta de nuevo.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchWallets();
+    setRefreshing(false);
+  };
+
+  // Función para mapear tipos de cuenta de la base de datos a los tipos del componente
+  const mapAccountType = (tipoCuenta) => {
+    const typeMapping = {
+      'Cuenta de Débito': 'bank',
+      'Cuenta de Ahorro': 'bank',
+      'Cuenta Corriente': 'bank',
+      'Tarjeta de Crédito': 'credit',
+      'Línea de Crédito': 'credit',
+      'Dinero en Efectivo': 'cash',
+      'Efectivo': 'cash',
+      'Monedero Digital': 'digital',
+      'PayPal': 'digital',
+      'Mercado Pago': 'digital',
+      'Inversiones': 'investment',
+      'Acciones': 'investment',
+      'Fondos': 'investment',
+    };
+    return typeMapping[tipoCuenta] || 'bank';
+  };
+
+  // Función para obtener color desde el nombre del color
+  const getColorFromName = (colorName) => {
+    const colorMapping = {
+      'Azul': '#004481',
+      'Rojo': '#E31837',
+      'Verde': '#27AE60',
+      'Morado': '#8E44AD',
+      'Naranja': '#F39C12',
+      'Rosa': '#E91E63',
+      'Cyan': '#1ABC9C',
+      'Amarillo': '#F1C40F',
+    };
+    return colorMapping[colorName] || '#004481';
+  };
+
+  // Función para obtener icono basado en el tipo de cuenta
+  const getIconFromType = (tipoCuenta) => {
+    if (tipoCuenta?.toLowerCase().includes('crédito')) return 'card';
+    if (tipoCuenta?.toLowerCase().includes('efectivo')) return 'cash';
+    if (tipoCuenta?.toLowerCase().includes('digital') || tipoCuenta?.toLowerCase().includes('paypal')) return 'phone-portrait';
+    if (tipoCuenta?.toLowerCase().includes('inversión') || tipoCuenta?.toLowerCase().includes('acciones')) return 'trending-up';
+    return 'business';
+  };
+
+  const handleDeleteWallet = (walletId) => {
+    Alert.alert(
+      'Eliminar Cuenta',
+      '¿Estás seguro de que deseas eliminar esta cuenta? Esta acción no se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: () => deleteWallet(walletId),
+        },
+      ]
+    );
+  };
+
+  const deleteWallet = async (walletId) => {
+    try {
+      if (!userId) {
+        Alert.alert('Error', 'No se pudo obtener la información del usuario');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/cuenta/cuentas/${walletId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Actualizar la lista local
+        setWallets(wallets.filter(wallet => wallet.id !== walletId));
+        Alert.alert('Éxito', 'Cuenta eliminada correctamente');
+      } else {
+        throw new Error('Error al eliminar la cuenta');
+      }
+    } catch (error) {
+      console.error('Error deleting wallet:', error);
+      Alert.alert(
+        'Error',
+        'No se pudo eliminar la cuenta. Por favor, intenta de nuevo.'
+      );
+    }
+  };
 
   const accountTypes = [
     { type: 'bank', name: 'Cuenta Bancaria', icon: 'business', color: colors.info },
@@ -132,23 +250,6 @@ const WalletsScreen = () => {
       investment: 'trending-up',
     };
     return iconMap[type] || 'wallet';
-  };
-
-  const handleDeleteWallet = (walletId) => {
-    Alert.alert(
-      'Eliminar Cuenta',
-      '¿Estás seguro de que deseas eliminar esta cuenta? Esta acción no se puede deshacer.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: () => {
-            setWallets(wallets.filter(wallet => wallet.id !== walletId));
-          },
-        },
-      ]
-    );
   };
 
   const renderHeader = () => (
@@ -217,6 +318,9 @@ const WalletsScreen = () => {
           <View style={styles.walletInfo}>
             <Text style={styles.walletName}>{wallet.name}</Text>
             <Text style={styles.walletType}>{wallet.accountType}</Text>
+            {wallet.bankName && (
+              <Text style={styles.walletBank}>{wallet.bankName}</Text>
+            )}
             {wallet.accountNumber && (
               <Text style={styles.walletNumber}>{wallet.accountNumber}</Text>
             )}
@@ -249,25 +353,8 @@ const WalletsScreen = () => {
           {formatCurrency(wallet.balance)}
         </Text>
         
-        {wallet.type === 'credit' && (
-          <View style={styles.creditInfo}>
-            <Text style={styles.creditLabel}>Límite de Crédito</Text>
-            <Text style={styles.creditLimit}>{formatCurrency(wallet.creditLimit)}</Text>
-            <View style={styles.creditUsageBar}>
-              <View 
-                style={[
-                  styles.creditUsageFill, 
-                  { 
-                    width: `${Math.abs(wallet.balance) / wallet.creditLimit * 100}%`,
-                    backgroundColor: Math.abs(wallet.balance) / wallet.creditLimit > 0.8 ? colors.error : colors.info
-                  }
-                ]} 
-              />
-            </View>
-            <Text style={styles.creditUsage}>
-              {((Math.abs(wallet.balance) / wallet.creditLimit) * 100).toFixed(1)}% utilizado
-            </Text>
-          </View>
+        {wallet.note && (
+          <Text style={styles.walletNote}>{wallet.note}</Text>
         )}
       </View>
     </TouchableOpacity>
@@ -298,7 +385,7 @@ const WalletsScreen = () => {
                 style={styles.accountTypeOption}
                 onPress={() => {
                   setShowAddModal(false);
-                  navigation.navigate('AddWallet');
+                  navigation.navigate('AddWallet', { accountType: accountType.type });
                 }}
               >
                 <View style={[styles.accountTypeIcon, { backgroundColor: accountType.color + '20' }]}>
@@ -327,6 +414,35 @@ const WalletsScreen = () => {
     </Modal>
   );
 
+  const renderEmptyState = () => (
+    <View style={styles.emptyContainer}>
+      <View style={styles.emptyIconContainer}>
+        <Ionicons name="wallet-outline" size={80} color={colors.textLight} />
+      </View>
+      <Text style={styles.emptyTitle}>No tienes cuentas registradas</Text>
+      <Text style={styles.emptySubtitle}>
+        Agrega tu primera cuenta para comenzar a gestionar tus finanzas
+      </Text>
+      <TouchableOpacity 
+        style={styles.emptyButton}
+        onPress={() => navigation.navigate('AddWallet')}
+      >
+        <Text style={styles.emptyButtonText}>Agregar Primera Cuenta</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  if (loading || !userId) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+          {!userId ? 'Obteniendo usuario...' : 'Cargando cuentas...'}
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <StatusBar 
@@ -335,24 +451,37 @@ const WalletsScreen = () => {
       />
       
       {renderHeader()}
-      {renderSummaryCards()}
+      
+      {wallets.length > 0 && renderSummaryCards()}
       
       <ScrollView 
         style={styles.walletsContainer} 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.walletsContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
       >
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Mis Cuentas ({wallets.length})</Text>
-          <TouchableOpacity style={styles.sortButton}>
-            <Ionicons name="swap-vertical" size={16} color={colors.textSecondary} />
-            <Text style={styles.sortText}>Ordenar</Text>
-          </TouchableOpacity>
-        </View>
+        {wallets.length === 0 ? (
+          renderEmptyState()
+        ) : (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Mis Cuentas ({wallets.length})</Text>
+              <TouchableOpacity style={styles.sortButton}>
+                <Ionicons name="swap-vertical" size={16} color={colors.textSecondary} />
+                <Text style={styles.sortText}>Ordenar</Text>
+              </TouchableOpacity>
+            </View>
 
-        {wallets.map(renderWalletCard)}
-
-
+            {wallets.map(renderWalletCard)}
+          </>
+        )}
       </ScrollView>
 
       {renderAddAccountModal()}
@@ -364,6 +493,14 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
   },
   header: {
     flexDirection: 'row',
@@ -515,9 +652,20 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: 2,
   },
+  walletBank: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: 2,
+  },
   walletNumber: {
     fontSize: 12,
     color: colors.textLight,
+  },
+  walletNote: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+    marginTop: 5,
   },
   walletActions: {
     flexDirection: 'row',
@@ -540,54 +688,39 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 10,
   },
-  creditInfo: {
-    marginTop: 10,
-  },
-  creditLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: 3,
-  },
-  creditLimit: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 8,
-  },
-  creditUsageBar: {
-    height: 6,
-    backgroundColor: colors.border,
-    borderRadius: 3,
-    marginBottom: 5,
-  },
-  creditUsageFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  creditUsage: {
-    fontSize: 11,
-    color: colors.textSecondary,
-  },
-  addAccountCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 30,
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: colors.primary + '20',
-    borderStyle: 'dashed',
+    paddingHorizontal: 40,
   },
-  addAccountText: {
+  emptyIconContainer: {
+    marginBottom: 20,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: colors.primary,
-    marginTop: 10,
-    marginBottom: 5,
-  },
-  addAccountSubtext: {
-    fontSize: 14,
     color: colors.textSecondary,
     textAlign: 'center',
+    marginBottom: 30,
+    lineHeight: 24,
+  },
+  emptyButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+    borderRadius: 25,
+  },
+  emptyButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,

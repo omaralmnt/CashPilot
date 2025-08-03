@@ -48,7 +48,7 @@
       "eas": {
         "projectId": "your-project-id-here"
       },
-      "API_URL":"http://172.20.10.2:4000"
+      "API_URL":"http://192.168.100.155:4000"
     }
   }
 }

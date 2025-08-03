@@ -4,7 +4,7 @@ const express = require('express');
 const router = express.Router();
 
 // Importar controladores existentes
-const { iniciarSesion, registrarUsuario } = require('../controladores/procesos/c_login');
+const { iniciarSesion, registrarUsuario, recuperarContraseña, restablecerContraseña } = require('../controladores/procesos/c_login');
 
 // Importar nuevos controladores de perfil
 const { 
@@ -17,7 +17,8 @@ const {
 // Rutas existentes
 router.post('/login', iniciarSesion);
 router.post('/register', registrarUsuario);
-
+router.post('/forgot-password', recuperarContraseña);
+router.post('/reset-password', restablecerContraseña);
 // Nuevas rutas para perfil de usuario (protegidas con JWT)
 router.get('/users/:id', verificarToken, obtenerUsuario);
 router.put('/users/:id', verificarToken, actualizarUsuario);

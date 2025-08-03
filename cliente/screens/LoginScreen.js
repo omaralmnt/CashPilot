@@ -18,7 +18,7 @@ import Constants from 'expo-constants';
 import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
-
+import ForgotPasswordModal from './ForgotPasswordModal';
 // Configure WebBrowser for AuthSession
 WebBrowser.maybeCompleteAuthSession();
 
@@ -29,7 +29,8 @@ const API_BASE_URL = Constants.expoConfig?.extra?.API_URL;// Cambia esta IP por 
 const LoginScreen = ({ navigation }) => {
   const { colors, isDark } = useTheme();
   const styles = useThemedStyles(createStyles);
-  
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -42,8 +43,9 @@ const LoginScreen = ({ navigation }) => {
   const [hasStoredCredentials, setHasStoredCredentials] = useState(false);
 
   // Configuración que funciona inmediatamente - usar la IP actual
-  const redirectUri = 'exp://172.20.10.2:8081';
-
+  const redirectUri = 'exp://192.168.100.155:8081';
+// exp://192.168.100.155:8081
+//exp://172.20.10.2:8081
   // DEBUG: Ver qué redirect URI se está usando (solo una vez)
   useEffect(() => {
     console.log('🔍 REDIRECT URI ACTUAL:', redirectUri);
@@ -603,14 +605,21 @@ const LoginScreen = ({ navigation }) => {
               )}
 
               {isLogin && (
-                <TouchableOpacity style={styles.forgotPasswordButton}>
-                  <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
-                </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.forgotPasswordButton}
+          onPress={() => setShowForgotPassword(true)}
+        >
+          <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
+        </TouchableOpacity>
               )}
             </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <ForgotPasswordModal
+  visible={showForgotPassword}
+  onClose={() => setShowForgotPassword(false)}
+/>
     </View>
   );
 };
