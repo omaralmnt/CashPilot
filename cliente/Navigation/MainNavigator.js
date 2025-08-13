@@ -15,6 +15,7 @@ import WalletsScreen from '../screens/WalletsScreen';
 import AddWalletScreen from '../screens/AddWalletScreen';
 import TransferScreen from '../screens/TransferScreen';
 import EditAccountScreen from '../screens/EditAccountScreen';
+import TransferListScreen from '../screens/TransferListScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -87,7 +88,7 @@ const TabNavigator = () => {
         />
         <Tab.Screen 
           name="Transacciones" 
-          component={TransactionsScreen}
+          component={TransferListScreen}
         />
         <Tab.Screen 
           name="Transferir" 

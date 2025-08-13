@@ -42,7 +42,7 @@ const crearCuenta = async (req, res) => {
 
 const consultarCuentas = async (req, res) => {
   const { id_usuario } = req.params;
-  
+  console.log('hola')
   try {
     const query = `
       SELECT 
