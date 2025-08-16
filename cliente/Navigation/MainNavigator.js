@@ -16,6 +16,7 @@ import AddWalletScreen from '../screens/AddWalletScreen';
 import TransferScreen from '../screens/TransferScreen';
 import EditAccountScreen from '../screens/EditAccountScreen';
 import TransferListScreen from '../screens/TransferListScreen';
+import ExpensesByCategoryScreen from '../screens/ExpensesByCategoryScreen'; // Nueva importación
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -42,6 +43,9 @@ const TabNavigator = () => {
               case 'Transacciones':
                 iconName = focused ? 'list' : 'list-outline';
                 break;
+              case 'Presupuestos':
+                iconName = focused ? 'pie-chart' : 'pie-chart-outline';
+                break;
               case 'Transferir':
                 iconName = focused ? 'swap-horizontal' : 'swap-horizontal-outline';
                 break;
@@ -67,17 +71,13 @@ const TabNavigator = () => {
             shadowOffset: { width: 0, height: -4 },
             shadowOpacity: colors.shadowOpacity,
             shadowRadius: 8,
-            height: 85,
-            paddingBottom: 10,
-            paddingTop: 10,
+            height: 70, // Reducida la altura ya que no hay etiquetas
+            paddingBottom: 15,
+            paddingTop: 15,
           },
-          tabBarLabelStyle: {
-            fontSize: 12,
-            fontWeight: '600',
-            marginTop: 4,
-          },
+          tabBarShowLabel: false, // Esta línea oculta las etiquetas
           tabBarIconStyle: {
-            marginTop: 5,
+            marginTop: 0,
           },
           headerShown: false,
         })}
@@ -91,9 +91,13 @@ const TabNavigator = () => {
           component={TransferListScreen}
         />
         <Tab.Screen 
+          name="Presupuestos" 
+          component={ExpensesByCategoryScreen}
+        />
+        {/* <Tab.Screen 
           name="Transferir" 
           component={TransferScreen}
-        />
+        /> */}
         <Tab.Screen 
           name="Cuentas" 
           component={WalletsScreen}
@@ -152,6 +156,15 @@ const MainNavigator = () => {
       <Stack.Screen 
         name="EditAccount" 
         component={EditAccountScreen}
+        options={{
+          gestureDirection: 'horizontal',
+        }}
+      />
+
+      {/* OPCIÓN ALTERNATIVA: Si prefieres que sea una pantalla modal en lugar de un tab */}
+      <Stack.Screen 
+        name="ExpensesByCategory" 
+        component={ExpensesByCategoryScreen}
         options={{
           gestureDirection: 'horizontal',
         }}
