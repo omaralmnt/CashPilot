@@ -133,7 +133,7 @@ const MainNavigator = () => {
       {/* Pantallas modales/secundarias */}
       <Stack.Screen 
         name="AddTransaction" 
-        component={AddTransactionScreen}
+        component={TransactionsScreen}
         options={{
           presentation: 'modal',
           headerShown: false,

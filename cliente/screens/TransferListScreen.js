@@ -86,59 +86,89 @@ const TransferListScreen = () => {
     }
   };
 
-  const loadTransfers = async (userId = null) => {
-    try {
-      setIsLoading(true);
-      const token = await AsyncStorage.getItem('userToken');
-      const userIdToUse = userId || currentUser?.id_usuario;
-      
-      if (!userIdToUse) {
-        throw new Error('Usuario no identificado');
-      }
+// En la función loadTransfers, cambia esta parte:
 
-      console.log('Cargando transferencias para usuario:', userIdToUse);
-      
-      const response = await fetch(`${API_BASE_URL}/api/transferencia/usuario/${userIdToUse}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      console.log('Transfers response status:', response.status);
-
-      const responseText = await response.text();
-      console.log('Transfers response text:', responseText);
-
-      if (response.ok) {
-        try {
-          const data = JSON.parse(responseText);
-          console.log('Parsed transfers data:', data);
-          
-          // Ordenar transferencias por fecha (más recientes primero)
-          const sortedTransfers = (data.transferencias || []).sort((a, b) => 
-            new Date(b.fecha_transferencia) - new Date(a.fecha_transferencia)
-          );
-          
-          setTransfers(sortedTransfers);
-        } catch (parseError) {
-          console.error('JSON Parse Error for transfers:', parseError);
-          throw new Error('Respuesta del servidor inválida al cargar transferencias');
-        }
-      } else {
-        throw new Error(`Error al cargar las transferencias: ${response.status}`);
-      }
-    } catch (error) {
-      console.error('Error loading transfers:', error);
-      Alert.alert('Error', 'No se pudieron cargar las transferencias: ' + error.message);
-      // Usar datos de ejemplo en caso de error
-      setTransfers(getSampleTransfers());
-    } finally {
-      setIsLoading(false);
-      setRefreshing(false);
+const loadTransfers = async (userId = null) => {
+  try {
+    setIsLoading(true);
+    const token = await AsyncStorage.getItem('userToken');
+    const userIdToUse = userId || currentUser?.id_usuario;
+    
+    if (!userIdToUse) {
+      throw new Error('Usuario no identificado');
     }
-  };
+
+    console.log('Cargando transferencias para usuario:', userIdToUse);
+    
+    const response = await fetch(`${API_BASE_URL}/api/transferencia/usuario/${userIdToUse}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('Transfers response status:', response.status);
+
+    const responseText = await response.text();
+    console.log('Transfers response text:', responseText);
+
+    if (response.ok) {
+      try {
+        const data = JSON.parse(responseText);
+        console.log('Parsed transfers data:', data);
+        
+        // CORRECCIÓN: Usar data.data en lugar de data.transferencias
+        const transfersData = data.data || [];
+        
+        // Mapear los datos del backend al formato que espera el frontend
+        const mappedTransfers = transfersData.map(transfer => ({
+          id_transferencia: transfer.id_transferencia,
+          monto: parseFloat(transfer.monto),
+          concepto: transfer.concepto,
+          fecha_transferencia: transfer.fecha_hora, // Mapear fecha_hora a fecha_transferencia
+          comision: 0.00, // El backend no devuelve comisión, usar 0
+          cuenta_origen: {
+            id_cuenta: transfer.id_cuenta_origen,
+            nombre_banco: transfer.banco_origen,
+            tipo_cuenta: transfer.tipo_cuenta_origen,
+            numero: `****${transfer.cuenta_origen_numero?.slice(-4) || '0000'}`,
+            codigo_hex: '#004481' // Color por defecto, puedes mejorarlo después
+          },
+          cuenta_destino: {
+            id_cuenta: transfer.id_cuenta_destino,
+            nombre_banco: transfer.banco_destino,
+            tipo_cuenta: transfer.tipo_cuenta_destino,
+            numero: `****${transfer.cuenta_destino_numero?.slice(-4) || '0000'}`,
+            codigo_hex: '#E31837' // Color por defecto, puedes mejorarlo después
+          },
+          id_usuario_origen: transfer.id_usuario,
+          id_usuario_destino: transfer.id_usuario // Usar el mismo por ahora, puedes mejorar esto
+        }));
+        
+        // Ordenar transferencias por fecha (más recientes primero)
+        const sortedTransfers = mappedTransfers.sort((a, b) => 
+          new Date(b.fecha_transferencia) - new Date(a.fecha_transferencia)
+        );
+        
+        setTransfers(sortedTransfers);
+      } catch (parseError) {
+        console.error('JSON Parse Error for transfers:', parseError);
+        throw new Error('Respuesta del servidor inválida al cargar transferencias');
+      }
+    } else {
+      throw new Error(`Error al cargar las transferencias: ${response.status}`);
+    }
+  } catch (error) {
+    console.error('Error loading transfers:', error);
+    Alert.alert('Error', 'No se pudieron cargar las transferencias: ' + error.message);
+    // Usar datos de ejemplo en caso de error
+    setTransfers(getSampleTransfers());
+  } finally {
+    setIsLoading(false);
+    setRefreshing(false);
+  }
+};
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);

@@ -24,42 +24,72 @@ const TransferScreen = () => {
   const { colors, isDark } = useTheme();
   const styles = useThemedStyles(createStyles);
   
+  // Estados principales
+  const [transactionType, setTransactionType] = useState('transfer'); // 'transfer', 'payment', 'receive'
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [fromAccount, setFromAccount] = useState('');
   const [toAccount, setToAccount] = useState('');
+  const [recipientInfo, setRecipientInfo] = useState({
+    name: '',
+    accountNumber: '',
+    bank: '',
+    email: '',
+    phone: ''
+  });
+  
+  // Estados de modales y UI
   const [showFromModal, setShowFromModal] = useState(false);
   const [showToModal, setShowToModal] = useState(false);
-  const [transferFee, setTransferFee] = useState('');
+  const [showRecipientModal, setShowRecipientModal] = useState(false);
+  const [transactionFee, setTransactionFee] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Estados de datos
   const [userAccounts, setUserAccounts] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
 
   const API_BASE_URL = Constants.expoConfig?.extra?.API_URL;
 
-  // Cargar datos del usuario y sus cuentas al montar el componente
+  // Tipos de transacción
+  const transactionTypes = [
+    {
+      id: 'transfer',
+      title: 'Transferencia Interna',
+      subtitle: 'Entre mis cuentas',
+      icon: 'swap-horizontal',
+      color: colors.primary
+    },
+    {
+      id: 'payment',
+      title: 'Pago a Tercero',
+      subtitle: 'A otra persona',
+      icon: 'arrow-up-circle',
+      color: colors.warning || '#FF9500'
+    },
+    {
+      id: 'receive',
+      title: 'Recibir Dinero',
+      subtitle: 'De otra persona',
+      icon: 'arrow-down-circle',
+      color: colors.success
+    }
+  ];
+
   useEffect(() => {
     loadUserData();
   }, []);
 
   const decodeToken = (token) => {
     try {
-      // El token JWT tiene 3 partes separadas por puntos: header.payload.signature
       const payload = token.split('.')[1];
-      
-      // Decodificar base64url a string
-      // Primero convertir base64url a base64 estándar
       let base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
       
-      // Agregar padding si es necesario
       while (base64.length % 4) {
         base64 += '=';
       }
       
-      // Decodificar usando atob nativo de JavaScript
       const decodedPayload = atob(base64);
-      
-      // Parsear el JSON
       return JSON.parse(decodedPayload);
     } catch (error) {
       console.error('Error decoding token:', error);
@@ -74,7 +104,6 @@ const TransferScreen = () => {
         const decodedToken = decodeToken(token);
         if (decodedToken && decodedToken.id_usuario) {
           setCurrentUser(decodedToken);
-          // Cargar cuentas del usuario después de obtener el ID
           loadUserAccounts(decodedToken.id_usuario);
         } else {
           throw new Error('Token inválido');
@@ -94,7 +123,6 @@ const TransferScreen = () => {
       const token = await AsyncStorage.getItem('userToken');
       
       console.log('Cargando cuentas para usuario:', userId);
-      console.log('API URL:', `${API_BASE_URL}/api/cuenta/cuentas/usuario/${userId}`);
 
       const response = await fetch(`${API_BASE_URL}/api/cuenta/cuentas/usuario/${userId}`, {
         method: 'GET',
@@ -105,8 +133,6 @@ const TransferScreen = () => {
       });
 
       console.log('Accounts response status:', response.status);
-
-      // Obtener el texto de la respuesta primero
       const responseText = await response.text();
       console.log('Accounts response text:', responseText);
 
@@ -115,8 +141,6 @@ const TransferScreen = () => {
           const data = JSON.parse(responseText);
           console.log('Parsed accounts data:', data);
           
-          // El backend devuelve { cuentas: [...], mensaje: "..." }
-          // Extraemos solo el array de cuentas
           const accounts = data.cuentas || [];
           console.log('Setting accounts:', accounts);
           setUserAccounts(accounts);
@@ -130,15 +154,13 @@ const TransferScreen = () => {
     } catch (error) {
       console.error('Error loading accounts:', error);
       Alert.alert('Error', 'No se pudieron cargar las cuentas disponibles: ' + error.message);
-      // Usar datos de ejemplo en caso de error
-      setUserAccounts(getSampleWallets());
+      setUserAccounts(getSampleAccounts());
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Datos de ejemplo como fallback
-  const getSampleWallets = () => [
+  const getSampleAccounts = () => [
     {
       id_cuenta: 1,
       nombre_banco: 'BBVA Bancomer',
@@ -179,7 +201,7 @@ const TransferScreen = () => {
 
   const handleFeeChange = (text) => {
     const formatted = formatAmount(text);
-    setTransferFee(formatted);
+    setTransactionFee(formatted);
   };
 
   const formatCurrency = (amount) => {
@@ -190,7 +212,6 @@ const TransferScreen = () => {
   };
 
   const getWalletIcon = (tipoParam) => {
-    // Mapear los tipos de cuenta a iconos
     const tipo = tipoParam?.toLowerCase() || '';
     
     if (tipo.includes('corriente') || tipo.includes('débito') || tipo.includes('efectivo')) {
@@ -205,59 +226,77 @@ const TransferScreen = () => {
       return 'trending-up';
     }
     
-    return 'wallet'; // icono por defecto
+    return 'wallet';
   };
 
   const getAvailableBalance = (wallet) => {
     const saldo = parseFloat(wallet.saldo) || 0;
     
     if (wallet.tipo_cuenta?.toLowerCase().includes('crédito')) {
-      // Para tarjetas de crédito, mostrar el saldo disponible
-      // Si el saldo es el límite disponible, mostrarlo directamente
       return saldo;
     }
     return saldo;
   };
 
-  const validateTransfer = () => {
-    if (!fromAccount) {
-      Alert.alert('Error', 'Por favor selecciona la cuenta de origen');
-      return false;
-    }
-
-    if (!toAccount) {
-      Alert.alert('Error', 'Por favor selecciona la cuenta de destino');
-      return false;
-    }
-
-    if (fromAccount === toAccount) {
-      Alert.alert('Error', 'Las cuentas de origen y destino deben ser diferentes');
-      return false;
-    }
-
+  const validateTransaction = () => {
     if (!amount || parseFloat(amount) <= 0) {
       Alert.alert('Error', 'Por favor ingresa un monto válido');
       return false;
     }
 
-    const fromWallet = userAccounts.find(w => w.id_cuenta === fromAccount);
-    const transferAmount = parseFloat(amount);
-    const feeAmount = parseFloat(transferFee) || 0;
-    const totalAmount = transferAmount + feeAmount;
-    const availableBalance = getAvailableBalance(fromWallet);
+    if (transactionType === 'transfer') {
+      if (!fromAccount || !toAccount) {
+        Alert.alert('Error', 'Por favor selecciona las cuentas de origen y destino');
+        return false;
+      }
+      
+      if (fromAccount === toAccount) {
+        Alert.alert('Error', 'Las cuentas de origen y destino deben ser diferentes');
+        return false;
+      }
+    } else if (transactionType === 'payment') {
+      if (!fromAccount) {
+        Alert.alert('Error', 'Por favor selecciona la cuenta de origen');
+        return false;
+      }
+      
+      if (!recipientInfo.name || !recipientInfo.accountNumber) {
+        Alert.alert('Error', 'Por favor completa la información del destinatario');
+        return false;
+      }
+    } else if (transactionType === 'receive') {
+      if (!toAccount) {
+        Alert.alert('Error', 'Por favor selecciona la cuenta de destino');
+        return false;
+      }
+      
+      if (!recipientInfo.name) {
+        Alert.alert('Error', 'Por favor ingresa el nombre de quien envía');
+        return false;
+      }
+    }
 
-    if (totalAmount > availableBalance) {
-      Alert.alert(
-        'Fondos insuficientes', 
-        `El monto a transferir (${formatCurrency(totalAmount)}) supera el saldo disponible (${formatCurrency(availableBalance)})`
-      );
-      return false;
+    // Validar saldo solo para transferencias y pagos
+    if (transactionType !== 'receive' && fromAccount) {
+      const fromWallet = userAccounts.find(w => w.id_cuenta === fromAccount);
+      const transactionAmount = parseFloat(amount);
+      const feeAmount = parseFloat(transactionFee) || 0;
+      const totalAmount = transactionAmount + feeAmount;
+      const availableBalance = getAvailableBalance(fromWallet);
+
+      if (totalAmount > availableBalance) {
+        Alert.alert(
+          'Fondos insuficientes', 
+          `El monto a ${transactionType === 'transfer' ? 'transferir' : 'pagar'} (${formatCurrency(totalAmount)}) supera el saldo disponible (${formatCurrency(availableBalance)})`
+        );
+        return false;
+      }
     }
 
     return true;
   };
 
-  const processTransfer = async () => {
+  const processTransaction = async () => {
     try {
       setIsLoading(true);
       const token = await AsyncStorage.getItem('userToken');
@@ -266,107 +305,199 @@ const TransferScreen = () => {
         throw new Error('Usuario no autenticado');
       }
 
-      const transferData = {
-        datosTransferencia: {
-          monto: parseFloat(amount),
-          concepto: description.trim() || null,
-          id_cuenta_origen: fromAccount,
-          id_cuenta_destino: toAccount,
-          id_usuario: currentUser.id_usuario,
-          comision: parseFloat(transferFee) || 0
-        }
-      };
+      let transactionData = {};
+      let endpoint = '';
 
-      console.log('Enviando transferencia:', transferData);
+      switch (transactionType) {
+        case 'transfer':
+          endpoint = '/api/transferencia';
+          transactionData = {
+            datosTransferencia: {
+              monto: parseFloat(amount),
+              concepto: description.trim() || null,
+              id_cuenta_origen: fromAccount,
+              id_cuenta_destino: toAccount,
+              id_usuario: currentUser.id_usuario,
+              comision: parseFloat(transactionFee) || 0
+            }
+          };
+          break;
+          
+        case 'payment':
+          endpoint = '/api/pago-tercero';
+          transactionData = {
+            datosPago: {
+              monto: parseFloat(amount),
+              concepto: description.trim() || null,
+              id_cuenta_origen: fromAccount,
+              id_usuario: currentUser.id_usuario,
+              destinatario: {
+                nombre: recipientInfo.name,
+                numero_cuenta: recipientInfo.accountNumber,
+                banco: recipientInfo.bank,
+                email: recipientInfo.email,
+                telefono: recipientInfo.phone
+              },
+              comision: parseFloat(transactionFee) || 0
+            }
+          };
+          break;
+          
+        case 'receive':
+          endpoint = '/api/recibir-dinero';
+          transactionData = {
+            datosRecepcion: {
+              monto: parseFloat(amount),
+              concepto: description.trim() || null,
+              id_cuenta_destino: toAccount,
+              id_usuario: currentUser.id_usuario,
+              remitente: {
+                nombre: recipientInfo.name,
+                numero_cuenta: recipientInfo.accountNumber || 'N/A',
+                banco: recipientInfo.bank || 'N/A',
+                email: recipientInfo.email,
+                telefono: recipientInfo.phone
+              }
+            }
+          };
+          break;
+      }
 
-      const response = await fetch(`${API_BASE_URL}/api/transferencia`, {
+      console.log('Enviando transacción:', transactionData);
+
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(transferData),
+        body: JSON.stringify(transactionData),
       });
 
       console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
-
-      // Obtener el texto de la respuesta primero
       const responseText = await response.text();
       console.log('Response text:', responseText);
 
       let result;
       try {
-        // Intentar parsear como JSON
         result = JSON.parse(responseText);
       } catch (parseError) {
         console.error('JSON Parse Error:', parseError);
-        console.error('Response was:', responseText);
         throw new Error(`El servidor devolvió una respuesta inválida. Status: ${response.status}`);
       }
 
       if (response.ok) {
-        // Transferencia exitosa
-        const fromWallet = userAccounts.find(w => w.id_cuenta === fromAccount);
-        const toWallet = userAccounts.find(w => w.id_cuenta === toAccount);
+        const typeText = {
+          transfer: 'Transferencia',
+          payment: 'Pago',
+          receive: 'Recepción'
+        };
         
         Alert.alert(
-          'Transferencia Exitosa',
-          `Se han transferido ${formatCurrency(parseFloat(amount))} de ${fromWallet.nombre_banco} a ${toWallet.nombre_banco}`,
+          `${typeText[transactionType]} Exitosa`,
+          getSuccessMessage(),
           [
             { 
               text: 'OK', 
               onPress: () => {
-                // Limpiar formulario
-                setAmount('');
-                setDescription('');
-                setFromAccount('');
-                setToAccount('');
-                setTransferFee('');
-                // Recargar cuentas para actualizar saldos
-                loadUserAccounts(currentUser.id_usuario);
+                clearForm();
                 navigation.goBack();
               }
             }
           ]
         );
       } else {
-        // Error en la transferencia
-        console.error('Error response:', result);
         throw new Error(result.error || `Error del servidor: ${response.status}`);
       }
     } catch (error) {
-      console.error('Transfer error:', error);
+      console.error('Transaction error:', error);
       Alert.alert(
-        'Error en la Transferencia',
-        error.message || 'No se pudo completar la transferencia. Intenta nuevamente.'
+        'Error en la Transacción',
+        error.message || 'No se pudo completar la transacción. Intenta nuevamente.'
       );
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleTransfer = () => {
-    if (!validateTransfer()) return;
+  const getSuccessMessage = () => {
+    const amountText = formatCurrency(parseFloat(amount));
+    
+    switch (transactionType) {
+      case 'transfer':
+        const fromWallet = userAccounts.find(w => w.id_cuenta === fromAccount);
+        const toWallet = userAccounts.find(w => w.id_cuenta === toAccount);
+        return `Se han transferido ${amountText} de ${fromWallet.nombre_banco} a ${toWallet.nombre_banco}`;
+        
+      case 'payment':
+        const paymentAccount = userAccounts.find(w => w.id_cuenta === fromAccount);
+        return `Se ha enviado un pago de ${amountText} desde ${paymentAccount.nombre_banco} a ${recipientInfo.name}`;
+        
+      case 'receive':
+        const receiveAccount = userAccounts.find(w => w.id_cuenta === toAccount);
+        return `Se ha registrado una recepción de ${amountText} de ${recipientInfo.name} en ${receiveAccount.nombre_banco}`;
+        
+      default:
+        return `Transacción de ${amountText} completada exitosamente`;
+    }
+  };
 
-    const fromWallet = userAccounts.find(w => w.id_cuenta === fromAccount);
-    const toWallet = userAccounts.find(w => w.id_cuenta === toAccount);
-    const transferAmount = parseFloat(amount);
-    const feeAmount = parseFloat(transferFee) || 0;
-    const totalAmount = transferAmount + feeAmount;
+  const clearForm = () => {
+    setAmount('');
+    setDescription('');
+    setFromAccount('');
+    setToAccount('');
+    setRecipientInfo({
+      name: '',
+      accountNumber: '',
+      bank: '',
+      email: '',
+      phone: ''
+    });
+    setTransactionFee('');
+  };
 
+  const handleTransaction = () => {
+    if (!validateTransaction()) return;
+
+    const confirmMessage = getConfirmMessage();
+    
     Alert.alert(
-      'Confirmar Transferencia',
-      `¿Confirmas la transferencia de ${formatCurrency(transferAmount)} de ${fromWallet.nombre_banco} a ${toWallet.nombre_banco}?${feeAmount > 0 ? `\n\nComisión: ${formatCurrency(feeAmount)}\nTotal: ${formatCurrency(totalAmount)}` : ''}`,
+      'Confirmar Transacción',
+      confirmMessage,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
-          text: 'Transferir',
+          text: 'Confirmar',
           style: 'default',
-          onPress: processTransfer
+          onPress: processTransaction
         }
       ]
     );
+  };
+
+  const getConfirmMessage = () => {
+    const amountText = formatCurrency(parseFloat(amount));
+    const feeAmount = parseFloat(transactionFee) || 0;
+    const totalAmount = parseFloat(amount) + feeAmount;
+    
+    switch (transactionType) {
+      case 'transfer':
+        const fromWallet = userAccounts.find(w => w.id_cuenta === fromAccount);
+        const toWallet = userAccounts.find(w => w.id_cuenta === toAccount);
+        return `¿Confirmas la transferencia de ${amountText} de ${fromWallet.nombre_banco} a ${toWallet.nombre_banco}?${feeAmount > 0 ? `\n\nComisión: ${formatCurrency(feeAmount)}\nTotal: ${formatCurrency(totalAmount)}` : ''}`;
+        
+      case 'payment':
+        const paymentAccount = userAccounts.find(w => w.id_cuenta === fromAccount);
+        return `¿Confirmas el pago de ${amountText} desde ${paymentAccount.nombre_banco} a ${recipientInfo.name}?${feeAmount > 0 ? `\n\nComisión: ${formatCurrency(feeAmount)}\nTotal: ${formatCurrency(totalAmount)}` : ''}`;
+        
+      case 'receive':
+        const receiveAccount = userAccounts.find(w => w.id_cuenta === toAccount);
+        return `¿Confirmas registrar la recepción de ${amountText} de ${recipientInfo.name} en ${receiveAccount.nombre_banco}?`;
+        
+      default:
+        return `¿Confirmas esta transacción de ${amountText}?`;
+    }
   };
 
   const renderHeader = () => (
@@ -378,14 +509,68 @@ const TransferScreen = () => {
         <Ionicons name="arrow-back" size={24} color={colors.text} />
       </TouchableOpacity>
       
-      <Text style={styles.headerTitle}>Transferencia</Text>
+      <Text style={styles.headerTitle}>Nueva Transacción</Text>
       
       <TouchableOpacity 
         style={styles.helpButton}
-        onPress={() => Alert.alert('Ayuda', 'Transfiere dinero entre tus cuentas de forma rápida y segura')}
+        onPress={() => Alert.alert('Ayuda', 'Realiza transferencias, pagos o registra dinero recibido de forma rápida y segura')}
       >
         <Ionicons name="help-circle-outline" size={24} color={colors.textSecondary} />
       </TouchableOpacity>
+    </View>
+  );
+
+  const renderTransactionTypeSelector = () => (
+    <View style={styles.typeContainer}>
+      <Text style={styles.sectionTitle}>Tipo de Transacción</Text>
+      <View style={styles.typeGrid}>
+        {transactionTypes.map((type) => (
+          <TouchableOpacity
+            key={type.id}
+            style={[
+              styles.typeCard,
+              transactionType === type.id && styles.typeCardActive
+            ]}
+            onPress={() => {
+              setTransactionType(type.id);
+              // Limpiar campos al cambiar tipo
+              setFromAccount('');
+              setToAccount('');
+              setRecipientInfo({
+                name: '',
+                accountNumber: '',
+                bank: '',
+                email: '',
+                phone: ''
+              });
+            }}
+          >
+            <View style={[
+              styles.typeIcon,
+              { backgroundColor: type.color + '20' },
+              transactionType === type.id && { backgroundColor: type.color }
+            ]}>
+              <Ionicons
+                name={type.icon}
+                size={24}
+                color={transactionType === type.id ? 'white' : type.color}
+              />
+            </View>
+            <Text style={[
+              styles.typeTitle,
+              transactionType === type.id && styles.typeTitleActive
+            ]}>
+              {type.title}
+            </Text>
+            <Text style={[
+              styles.typeSubtitle,
+              transactionType === type.id && styles.typeSubtitleActive
+            ]}>
+              {type.subtitle}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
     </View>
   );
 
@@ -425,31 +610,58 @@ const TransferScreen = () => {
     );
   };
 
-  const renderTransferFlow = () => (
-    <View style={styles.transferFlowContainer}>
-      <View style={styles.flowStep}>
-        <View style={[styles.flowIcon, { backgroundColor: colors.primary }]}>
-          <Ionicons name="remove-circle" size={20} color="white" />
+  const renderRecipientInfo = () => {
+    if (transactionType === 'transfer') return null;
+
+    return (
+      <View style={styles.formGroup}>
+        <Text style={styles.sectionTitle}>
+          {transactionType === 'payment' ? 'Información del Destinatario' : 'Información del Remitente'}
+        </Text>
+        
+        <View style={styles.recipientCard}>
+          <TouchableOpacity
+            style={styles.recipientSelector}
+            onPress={() => setShowRecipientModal(true)}
+          >
+            {recipientInfo.name ? (
+              <View style={styles.recipientInfo}>
+                <View style={styles.recipientIcon}>
+                  <Ionicons name="person" size={24} color={colors.primary} />
+                </View>
+                <View style={styles.recipientDetails}>
+                  <Text style={styles.recipientName}>{recipientInfo.name}</Text>
+                  {recipientInfo.accountNumber && (
+                    <Text style={styles.recipientAccount}>
+                      {recipientInfo.bank && `${recipientInfo.bank} • `}{recipientInfo.accountNumber}
+                    </Text>
+                  )}
+                  {recipientInfo.email && (
+                    <Text style={styles.recipientContact}>{recipientInfo.email}</Text>
+                  )}
+                  {recipientInfo.phone && (
+                    <Text style={styles.recipientContact}>{recipientInfo.phone}</Text>
+                  )}
+                </View>
+              </View>
+            ) : (
+              <View style={styles.placeholderContainer}>
+                <Ionicons name="person-add-outline" size={24} color={colors.textLight} />
+                <Text style={styles.selectorPlaceholder}>
+                  {transactionType === 'payment' ? 'Agregar destinatario' : 'Agregar remitente'}
+                </Text>
+              </View>
+            )}
+            <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
+          </TouchableOpacity>
         </View>
-        <Text style={styles.flowLabel}>De</Text>
       </View>
-      
-      <View style={styles.flowArrow}>
-        <Ionicons name="arrow-forward" size={24} color={colors.primary} />
-      </View>
-      
-      <View style={styles.flowStep}>
-        <View style={[styles.flowIcon, { backgroundColor: colors.success }]}>
-          <Ionicons name="add-circle" size={20} color="white" />
-        </View>
-        <Text style={styles.flowLabel}>Para</Text>
-      </View>
-    </View>
-  );
+    );
+  };
 
   const renderAmountInput = () => (
     <View style={styles.formGroup}>
-      <Text style={styles.inputLabel}>Monto a Transferir *</Text>
+      <Text style={styles.inputLabel}>Monto *</Text>
       <View style={styles.amountInputContainer}>
         <Text style={styles.currencySymbol}>$</Text>
         <TextInput
@@ -465,26 +677,26 @@ const TransferScreen = () => {
       </View>
       {amount && (
         <Text style={styles.amountPreview}>
-          Transferir: {formatCurrency(parseFloat(amount))}
+          Monto: {formatCurrency(parseFloat(amount))}
         </Text>
       )}
     </View>
   );
 
-  const renderTransferSummary = () => {
-    if (!amount || !fromAccount || !toAccount) return null;
+  const renderTransactionSummary = () => {
+    if (!amount || (!fromAccount && !toAccount)) return null;
 
-    const transferAmount = parseFloat(amount);
-    const feeAmount = parseFloat(transferFee) || 0;
-    const totalAmount = transferAmount + feeAmount;
+    const transactionAmount = parseFloat(amount);
+    const feeAmount = parseFloat(transactionFee) || 0;
+    const totalAmount = transactionAmount + feeAmount;
 
     return (
       <View style={styles.summaryCard}>
-        <Text style={styles.summaryTitle}>Resumen de Transferencia</Text>
+        <Text style={styles.summaryTitle}>Resumen de Transacción</Text>
         
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Monto a transferir</Text>
-          <Text style={styles.summaryValue}>{formatCurrency(transferAmount)}</Text>
+          <Text style={styles.summaryLabel}>Monto</Text>
+          <Text style={styles.summaryValue}>{formatCurrency(transactionAmount)}</Text>
         </View>
         
         {feeAmount > 0 && (
@@ -496,17 +708,19 @@ const TransferScreen = () => {
           </View>
         )}
         
-        <View style={[styles.summaryRow, styles.summaryTotal]}>
-          <Text style={styles.summaryTotalLabel}>Total a debitar</Text>
-          <Text style={styles.summaryTotalValue}>{formatCurrency(totalAmount)}</Text>
-        </View>
+        {transactionType !== 'receive' && (
+          <View style={[styles.summaryRow, styles.summaryTotal]}>
+            <Text style={styles.summaryTotalLabel}>Total a debitar</Text>
+            <Text style={styles.summaryTotalValue}>{formatCurrency(totalAmount)}</Text>
+          </View>
+        )}
       </View>
     );
   };
 
   const renderAccountModal = (visible, onClose, selectedId, onSelect, title) => {
     let availableAccounts = userAccounts;
-    if (title === 'Cuenta de Destino') {
+    if (title === 'Cuenta de Destino' && transactionType === 'transfer') {
       availableAccounts = userAccounts.filter(w => w.id_cuenta !== fromAccount);
     } else if (title === 'Cuenta de Origen') {
       availableAccounts = userAccounts.filter(w => w.saldo > 0 || w.tipo === 'credit');
@@ -565,6 +779,105 @@ const TransferScreen = () => {
     );
   };
 
+  const renderRecipientModal = () => (
+    <Modal visible={showRecipientModal} transparent animationType="slide">
+      <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView 
+          style={styles.modalContent}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>
+              {transactionType === 'payment' ? 'Información del Destinatario' : 'Información del Remitente'}
+            </Text>
+            <TouchableOpacity onPress={() => setShowRecipientModal(false)}>
+              <Ionicons name="close" size={24} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.recipientForm}>
+            <View style={styles.formGroup}>
+              <Text style={styles.inputLabel}>Nombre completo *</Text>
+              <TextInput
+                style={styles.textInput}
+                value={recipientInfo.name}
+                onChangeText={(text) => setRecipientInfo({...recipientInfo, name: text})}
+                placeholder="Nombre de la persona"
+                placeholderTextColor={colors.textLight}
+                maxLength={100}
+              />
+            </View>
+
+            {transactionType === 'payment' && (
+              <>
+                <View style={styles.formGroup}>
+                  <Text style={styles.inputLabel}>Número de cuenta *</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={recipientInfo.accountNumber}
+                    onChangeText={(text) => setRecipientInfo({...recipientInfo, accountNumber: text})}
+                    placeholder="Número de cuenta del destinatario"
+                    placeholderTextColor={colors.textLight}
+                    maxLength={20}
+                  />
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.inputLabel}>Banco</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={recipientInfo.bank}
+                    onChangeText={(text) => setRecipientInfo({...recipientInfo, bank: text})}
+                    placeholder="Nombre del banco"
+                    placeholderTextColor={colors.textLight}
+                    maxLength={50}
+                  />
+                </View>
+              </>
+            )}
+
+            <View style={styles.formGroup}>
+              <Text style={styles.inputLabel}>Email</Text>
+              <TextInput
+                style={styles.textInput}
+                value={recipientInfo.email}
+                onChangeText={(text) => setRecipientInfo({...recipientInfo, email: text})}
+                placeholder="correo@ejemplo.com"
+                placeholderTextColor={colors.textLight}
+                keyboardType="email-address"
+                maxLength={100}
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.inputLabel}>Teléfono</Text>
+              <TextInput
+                style={styles.textInput}
+                value={recipientInfo.phone}
+                onChangeText={(text) => setRecipientInfo({...recipientInfo, phone: text})}
+                placeholder="+1 (234) 567-8900"
+                placeholderTextColor={colors.textLight}
+                keyboardType="phone-pad"
+                maxLength={20}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[
+                styles.saveButton,
+                !recipientInfo.name && styles.saveButtonDisabled
+              ]}
+              onPress={() => setShowRecipientModal(false)}
+              disabled={!recipientInfo.name}
+            >
+              <Text style={styles.saveButtonText}>Guardar</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </View>
+    </Modal>
+  );
+
   const getFilteredToAccounts = () => {
     return userAccounts.filter(w => w.id_cuenta !== fromAccount);
   };
@@ -597,44 +910,56 @@ const TransferScreen = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {renderTransferFlow()}
+          {renderTransactionTypeSelector()}
           
-          {renderAccountSelector(
-            'Cuenta de Origen',
-            fromAccount,
-            () => setShowFromModal(true)
-          )}
+          {/* Cuenta de origen - Solo para transferencias y pagos */}
+          {(transactionType === 'transfer' || transactionType === 'payment') && 
+            renderAccountSelector(
+              'Cuenta de Origen',
+              fromAccount,
+              () => setShowFromModal(true)
+            )
+          }
           
-          {renderAccountSelector(
-            'Cuenta de Destino',
-            toAccount,
-            () => setShowToModal(true),
-            getFilteredToAccounts()
-          )}
+          {/* Cuenta de destino - Solo para transferencias y recibir */}
+          {(transactionType === 'transfer' || transactionType === 'receive') && 
+            renderAccountSelector(
+              'Cuenta de Destino',
+              toAccount,
+              () => setShowToModal(true),
+              transactionType === 'transfer' ? getFilteredToAccounts() : userAccounts
+            )
+          }
+          
+          {/* Información del destinatario/remitente */}
+          {renderRecipientInfo()}
           
           {renderAmountInput()}
           
-          <View style={styles.formGroup}>
-            <Text style={styles.inputLabel}>Comisión (Opcional)</Text>
-            <View style={styles.amountInputContainer}>
-              <Text style={styles.currencySymbol}>$</Text>
-              <TextInput
-                style={styles.amountInput}
-                value={transferFee}
-                onChangeText={handleFeeChange}
-                placeholder="0.00"
-                placeholderTextColor={colors.textLight}
-                keyboardType="decimal-pad"
-                maxLength={10}
-                editable={!isLoading}
-              />
+          {/* Comisión - Solo para transferencias y pagos */}
+          {(transactionType === 'transfer' || transactionType === 'payment') && (
+            <View style={styles.formGroup}>
+              <Text style={styles.inputLabel}>Comisión (Opcional)</Text>
+              <View style={styles.amountInputContainer}>
+                <Text style={styles.currencySymbol}>$</Text>
+                <TextInput
+                  style={styles.amountInput}
+                  value={transactionFee}
+                  onChangeText={handleFeeChange}
+                  placeholder="0.00"
+                  placeholderTextColor={colors.textLight}
+                  keyboardType="decimal-pad"
+                  maxLength={10}
+                  editable={!isLoading}
+                />
+              </View>
+              {transactionFee && (
+                <Text style={styles.feePreview}>
+                  Comisión: {formatCurrency(parseFloat(transactionFee))}
+                </Text>
+              )}
             </View>
-            {transferFee && (
-              <Text style={styles.feePreview}>
-                Comisión: {formatCurrency(parseFloat(transferFee))}
-              </Text>
-            )}
-          </View>
+          )}
           
           <View style={styles.formGroup}>
             <Text style={styles.inputLabel}>Concepto (Opcional)</Text>
@@ -642,7 +967,7 @@ const TransferScreen = () => {
               style={styles.textInput}
               value={description}
               onChangeText={setDescription}
-              placeholder="Descripción de la transferencia..."
+              placeholder="Descripción de la transacción..."
               placeholderTextColor={colors.textLight}
               maxLength={100}
               multiline
@@ -651,30 +976,47 @@ const TransferScreen = () => {
             />
           </View>
           
-          {renderTransferSummary()}
+          {renderTransactionSummary()}
         </ScrollView>
         
         <View style={styles.bottomContainer}>
           <TouchableOpacity
             style={[
-              styles.transferButton,
-              ((!amount || !fromAccount || !toAccount) || isLoading) && styles.transferButtonDisabled
+              styles.transactionButton,
+              (!amount || (transactionType === 'transfer' && (!fromAccount || !toAccount)) ||
+               (transactionType === 'payment' && (!fromAccount || !recipientInfo.name || !recipientInfo.accountNumber)) ||
+               (transactionType === 'receive' && (!toAccount || !recipientInfo.name)) ||
+               isLoading) && styles.transactionButtonDisabled
             ]}
-            onPress={handleTransfer}
-            disabled={!amount || !fromAccount || !toAccount || isLoading}
+            onPress={handleTransaction}
+            disabled={
+              !amount || 
+              (transactionType === 'transfer' && (!fromAccount || !toAccount)) ||
+              (transactionType === 'payment' && (!fromAccount || !recipientInfo.name || !recipientInfo.accountNumber)) ||
+              (transactionType === 'receive' && (!toAccount || !recipientInfo.name)) ||
+              isLoading
+            }
           >
             {isLoading ? (
               <ActivityIndicator size="small" color="white" style={{ marginRight: 8 }} />
             ) : (
-              <Ionicons name="swap-horizontal" size={24} color="white" style={{ marginRight: 8 }} />
+              <Ionicons 
+                name={transactionTypes.find(t => t.id === transactionType)?.icon || 'checkmark'} 
+                size={24} 
+                color="white" 
+                style={{ marginRight: 8 }} 
+              />
             )}
-            <Text style={styles.transferButtonText}>
-              {isLoading ? 'Procesando...' : 'Transferir'}
+            <Text style={styles.transactionButtonText}>
+              {isLoading ? 'Procesando...' : 
+               transactionType === 'transfer' ? 'Transferir' :
+               transactionType === 'payment' ? 'Pagar' : 'Registrar Recepción'}
             </Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
       
+      {/* Modales */}
       {renderAccountModal(
         showFromModal,
         () => setShowFromModal(false),
@@ -690,6 +1032,8 @@ const TransferScreen = () => {
         setToAccount,
         'Cuenta de Destino'
       )}
+      
+      {renderRecipientModal()}
     </View>
   );
 };
@@ -740,17 +1084,38 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     padding: 20,
     paddingBottom: 100,
   },
-  transferFlowContainer: {
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 15,
+  },
+  typeContainer: {
+    marginBottom: 25,
+  },
+  typeGrid: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 30,
-    paddingVertical: 20,
+    gap: 10,
   },
-  flowStep: {
+  typeCard: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 16,
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+    elevation: 2,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
-  flowIcon: {
+  typeCardActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight || colors.surface,
+  },
+  typeIcon: {
     width: 50,
     height: 50,
     borderRadius: 25,
@@ -758,13 +1123,23 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 8,
   },
-  flowLabel: {
+  typeTitle: {
     fontSize: 14,
     fontWeight: '600',
     color: colors.text,
+    textAlign: 'center',
+    marginBottom: 4,
   },
-  flowArrow: {
-    marginHorizontal: 30,
+  typeTitleActive: {
+    color: colors.primary,
+  },
+  typeSubtitle: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  typeSubtitleActive: {
+    color: colors.primary,
   },
   formGroup: {
     marginBottom: 20,
@@ -827,6 +1202,50 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     color: colors.textLight,
     marginLeft: 12,
   },
+  recipientCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  recipientSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+  },
+  recipientInfo: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  recipientIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: colors.primaryLight || colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  recipientDetails: {
+    flex: 1,
+  },
+  recipientName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 2,
+  },
+  recipientAccount: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: 2,
+  },
+  recipientContact: {
+    fontSize: 12,
+    color: colors.textLight,
+    marginBottom: 1,
+  },
   amountInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -879,7 +1298,7 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     elevation: 3,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: colors.shadowOpacity,
+    shadowOpacity: colors.shadowOpacity || 0.1,
     shadowRadius: 6,
   },
   summaryTitle: {
@@ -929,7 +1348,7 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
-  transferButton: {
+  transactionButton: {
     backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
@@ -942,10 +1361,10 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },
-  transferButtonDisabled: {
+  transactionButtonDisabled: {
     backgroundColor: colors.textLight,
   },
-  transferButtonText: {
+  transactionButtonText: {
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
@@ -959,7 +1378,7 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '70%',
+    maxHeight: '80%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -982,10 +1401,10 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     alignItems: 'center',
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: colors.separator,
+    borderBottomColor: colors.separator || colors.border,
   },
   accountOptionSelected: {
-    backgroundColor: colors.primaryLight,
+    backgroundColor: colors.primaryLight || colors.border,
   },
   accountOptionDetails: {
     flex: 1,
@@ -1011,6 +1430,25 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
   accountOptionNumber: {
     fontSize: 11,
     color: colors.textLight,
+  },
+  recipientForm: {
+    padding: 20,
+    maxHeight: 500,
+  },
+  saveButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: 15,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  saveButtonDisabled: {
+    backgroundColor: colors.textLight,
+  },
+  saveButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

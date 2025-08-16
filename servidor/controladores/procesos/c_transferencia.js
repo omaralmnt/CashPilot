@@ -126,15 +126,85 @@ const registrarTransferencia = async (req, res) => {
   }
 };
 
-
-const obtenerTransferencias = async (req,res) =>{
+const obtenerTransferenciasUsuario = async (req, res) => {
   try {
-     console.log(hola)
+    const { id_usuario } = req.params;
+    
+    // Validar que el ID sea válido
+    if (!id_usuario || isNaN(id_usuario)) {
+      return res.status(400).json({
+        error: 'ID de usuario inválido'
+      });
+    }
+
+    // Verificar que el usuario exista
+    const queryVerificarUsuario = `
+      SELECT id_usuario FROM usuario WHERE id_usuario = $1
+    `;
+    const resultUsuario = await pool.query(queryVerificarUsuario, [id_usuario]);
+
+    if (resultUsuario.rowCount === 0) {
+      return res.status(404).json({ 
+        error: 'El usuario no existe' 
+      });
+    }
+
+    // Consulta SQL para obtener transferencias del usuario con información completa
+    const query = `
+      SELECT 
+        t.id_transferencia,
+        t.monto,
+        t.fecha_hora,
+        t.concepto,
+        t.id_cuenta_origen,
+        t.id_cuenta_destino,
+        t.id_usuario,
+        co.descripcion as cuenta_origen_descripcion,
+        co.numero as cuenta_origen_numero,
+        cd.descripcion as cuenta_destino_descripcion,
+        cd.numero as cuenta_destino_numero,
+        bo.descripcion as banco_origen,
+        bd.descripcion as banco_destino,
+        tco.descripcion as tipo_cuenta_origen,
+        tcd.descripcion as tipo_cuenta_destino,
+        uo.nombre as usuario_nombre,
+        ud.nombre as usuario_destino_nombre
+      FROM transferencia t
+      LEFT JOIN cuenta co ON t.id_cuenta_origen = co.id_cuenta
+      LEFT JOIN cuenta cd ON t.id_cuenta_destino = cd.id_cuenta  
+      LEFT JOIN banco bo ON co.id_banco = bo.id_banco
+      LEFT JOIN banco bd ON cd.id_banco = bd.id_banco
+      LEFT JOIN tipo_cuenta tco ON co.id_tipo_cuenta = tco.id_tipo_cuenta
+      LEFT JOIN tipo_cuenta tcd ON cd.id_tipo_cuenta = tcd.id_tipo_cuenta
+      LEFT JOIN usuario uo ON t.id_usuario = uo.id_usuario
+      LEFT JOIN usuario ud ON cd.id_usuario = ud.id_usuario
+      WHERE t.id_usuario = $1
+      ORDER BY t.fecha_hora DESC
+    `;
+
+    // Ejecutar consulta con PostgreSQL
+    const result = await pool.query(query, [id_usuario]);
+    const transferencias = result.rows;
+
+    // Responder con las transferencias
+    res.status(200).json({
+      success: true,
+      data: transferencias,
+      total: transferencias.length,
+      mensaje: transferencias.length > 0 ? 
+        `Se encontraron ${transferencias.length} transferencias` : 
+        'No se encontraron transferencias para este usuario'
+    });
+
   } catch (error) {
-    req.status(500).json({mensaje:'unknown error'})
+    console.error('Error al obtener transferencias:', error);
+    res.status(500).json({
+      error: 'Error interno del servidor'
+    });
   }
-}
+};
+
 module.exports = {
   registrarTransferencia,
-  obtenerTransferencias
+  obtenerTransferenciasUsuario
 };
