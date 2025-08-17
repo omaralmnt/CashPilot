@@ -14,7 +14,6 @@
       "resizeMode": "contain",
       "backgroundColor": "#667eea"
     },
-
     "ios": {
       "supportsTablet": true,
       "userInterfaceStyle": "automatic",
@@ -42,14 +41,14 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-local-authentication"
+      "expo-local-authentication",
+      "expo-localization"
     ],
     "extra": {
       "eas": {
         "projectId": "your-project-id-here"
       },
-      "API_URL":"http://192.168.100.155:4000"
+      "API_URL": "http://192.168.100.155:4000"
     }
   }
 }
-

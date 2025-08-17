@@ -16,7 +16,8 @@ import AddWalletScreen from '../screens/AddWalletScreen';
 import TransferScreen from '../screens/TransferScreen';
 import EditAccountScreen from '../screens/EditAccountScreen';
 import TransferListScreen from '../screens/TransferListScreen';
-import ExpensesByCategoryScreen from '../screens/ExpensesByCategoryScreen'; // Nueva importación
+import ExpensesByCategoryScreen from '../screens/ExpensesByCategoryScreen';
+import CategoriasPersonalizadasScreen from '../screens/CategoriasPersonalizadasScreen'; // Nueva importación
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -161,12 +162,22 @@ const MainNavigator = () => {
         }}
       />
 
-      {/* OPCIÓN ALTERNATIVA: Si prefieres que sea una pantalla modal en lugar de un tab */}
       <Stack.Screen 
         name="ExpensesByCategory" 
         component={ExpensesByCategoryScreen}
         options={{
           gestureDirection: 'horizontal',
+        }}
+      />
+
+      {/* Nueva pantalla de Categorías Personalizadas */}
+      <Stack.Screen 
+        name="CategoriasPersonalizadas" 
+        component={CategoriasPersonalizadasScreen}
+        options={{
+          gestureDirection: 'horizontal',
+          // Opcional: puedes agregar animaciones personalizadas
+          // cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}
       />
       

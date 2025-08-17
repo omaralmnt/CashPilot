@@ -534,8 +534,8 @@ const obtenerCategoriasPersonalizadas = async (req, res) => {
 // Función para actualizar una categoría personalizada
 const actualizarCategoriaPersonalizada = async (req, res) => {
   try {
-    const { id_usuario, id_categoria } = req.params;
-    const { descripcion } = req.body;
+    const { id_usuario  } = req.params;
+    const { descripcion, id_categoria } = req.body;
 
     // Validaciones básicas
     if (!id_usuario || isNaN(id_usuario)) {
@@ -615,8 +615,8 @@ const actualizarCategoriaPersonalizada = async (req, res) => {
 // Función para eliminar una categoría personalizada
 const eliminarCategoriaPersonalizada = async (req, res) => {
   try {
-    const { id_usuario, id_categoria } = req.params;
-
+    const { id_usuario } = req.params;
+    const {id_categoria} = req.body;
     // Validaciones básicas
     if (!id_usuario || isNaN(id_usuario)) {
       return res.status(400).json({

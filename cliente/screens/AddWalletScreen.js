@@ -17,6 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import Constants from 'expo-constants';
 
 const API_BASE_URL = Constants.expoConfig?.extra?.API_URL;
@@ -25,8 +26,8 @@ const AddWalletScreen = () => {
   const navigation = useNavigation();
   const { colors, isDark } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { t } = useTranslation();
   
-  const [accountType, setAccountType] = useState('');
   const [accountName, setAccountName] = useState('');
   const [initialBalance, setInitialBalance] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
@@ -34,7 +35,6 @@ const AddWalletScreen = () => {
   const [selectedTipoCuenta, setSelectedTipoCuenta] = useState(null);
   const [selectedColor, setSelectedColor] = useState(null);
   const [notes, setNotes] = useState('');
-  const [showTypeModal, setShowTypeModal] = useState(false);
   const [showBankModal, setShowBankModal] = useState(false);
   const [showTipoCuentaModal, setShowTipoCuentaModal] = useState(false);
   const [showColorModal, setShowColorModal] = useState(false);
@@ -48,45 +48,6 @@ const AddWalletScreen = () => {
 
   // ID del usuario autenticado desde AsyncStorage
   const [userId, setUserId] = useState(null);
-
-  // Tipos de cuenta disponibles (categorías principales)
-  const accountTypes = [
-    { 
-      type: 'bank', 
-      name: 'Cuenta Bancaria', 
-      icon: 'business', 
-      color: '#3498DB',
-      description: 'Cuenta de débito, ahorro o nómina'
-    },
-    { 
-      type: 'credit', 
-      name: 'Tarjeta de Crédito', 
-      icon: 'card', 
-      color: '#E74C3C',
-      description: 'Tarjeta de crédito o línea de crédito'
-    },
-    { 
-      type: 'cash', 
-      name: 'Efectivo', 
-      icon: 'cash', 
-      color: '#27AE60',
-      description: 'Dinero en efectivo y monedas'
-    },
-    { 
-      type: 'digital', 
-      name: 'Monedero Digital', 
-      icon: 'phone-portrait', 
-      color: '#9B59B6',
-      description: 'PayPal, Mercado Pago, etc.'
-    },
-    { 
-      type: 'investment', 
-      name: 'Inversiones', 
-      icon: 'trending-up', 
-      color: '#F39C12',
-      description: 'Acciones, fondos, criptomonedas'
-    },
-  ];
 
   useEffect(() => {
     getUserIdAndLoadData();
@@ -106,16 +67,16 @@ const AddWalletScreen = () => {
           setUserId(userIdFromToken);
           await loadInitialData();
         } else {
-          Alert.alert('Error', 'No se pudo obtener la información del usuario del token');
+          Alert.alert(t('common.error'), t('addWallet.errors.userInfoNotFound'));
           navigation.goBack();
         }
       } else {
-        Alert.alert('Error', 'Token de usuario no encontrado');
+        Alert.alert(t('common.error'), t('addWallet.errors.userTokenNotFound'));
         navigation.goBack();
       }
     } catch (error) {
       console.error('Error decoding JWT:', error);
-      Alert.alert('Error', 'Error al procesar el token de usuario');
+      Alert.alert(t('common.error'), t('addWallet.errors.tokenProcessError'));
       navigation.goBack();
     } finally {
       setLoading(false);
@@ -131,7 +92,7 @@ const AddWalletScreen = () => {
       ]);
     } catch (error) {
       console.error('Error loading initial data:', error);
-      Alert.alert('Error', 'No se pudieron cargar los datos necesarios');
+      Alert.alert(t('common.error'), t('addWallet.errors.loadInitialData'));
     }
   };
 
@@ -164,7 +125,11 @@ const AddWalletScreen = () => {
       const response = await fetch(`${API_BASE_URL}/api/cuenta/colores`);
       if (response.ok) {
         const data = await response.json();
-        setColores(data.colores || []);
+        // Filtrar colores que tengan codigo_hex válido
+        const coloresValidos = (data.colores || []).filter(color => 
+          color.codigo_hex && color.codigo_hex.trim() !== ''
+        );
+        setColores(coloresValidos);
       }
     } catch (error) {
       console.error('Error fetching colores:', error);
@@ -185,38 +150,24 @@ const AddWalletScreen = () => {
     setInitialBalance(formatted);
   };
 
-  const getSelectedAccountType = () => {
-    return accountTypes.find(type => type.type === accountType);
-  };
-
   const validateForm = () => {
-    if (!accountType) {
-      Alert.alert('Error', 'Por favor selecciona un tipo de cuenta');
-      return false;
-    }
-
     if (!accountName.trim()) {
-      Alert.alert('Error', 'Por favor ingresa un nombre para la cuenta');
+      Alert.alert(t('common.error'), t('addWallet.validation.accountNameRequired'));
       return false;
     }
 
     if (!selectedTipoCuenta) {
-      Alert.alert('Error', 'Por favor selecciona el tipo específico de cuenta');
-      return false;
-    }
-
-    if (accountType === 'bank' && !selectedBank) {
-      Alert.alert('Error', 'Por favor selecciona el banco');
+      Alert.alert(t('common.error'), t('addWallet.validation.accountTypeRequired'));
       return false;
     }
 
     if (!selectedColor) {
-      Alert.alert('Error', 'Por favor selecciona un color para la cuenta');
+      Alert.alert(t('common.error'), t('addWallet.validation.colorRequired'));
       return false;
     }
 
     if (!initialBalance || parseFloat(initialBalance) < 0) {
-      Alert.alert('Error', 'Por favor ingresa un saldo inicial válido');
+      Alert.alert(t('common.error'), t('addWallet.validation.validBalanceRequired'));
       return false;
     }
 
@@ -227,7 +178,7 @@ const AddWalletScreen = () => {
     if (!validateForm()) return;
 
     if (!userId) {
-      Alert.alert('Error', 'No se pudo obtener la información del usuario');
+      Alert.alert(t('common.error'), t('addWallet.errors.userInfoNotFound'));
       return;
     }
 
@@ -255,22 +206,22 @@ const AddWalletScreen = () => {
       if (response.ok) {
         const data = await response.json();
         Alert.alert(
-          'Éxito', 
-          'Cuenta creada correctamente',
+          t('common.success'), 
+          t('addWallet.success.accountCreated'),
           [{ 
-            text: 'OK', 
+            text: t('common.ok'), 
             onPress: () => navigation.goBack() 
           }]
         );
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al crear la cuenta');
+        throw new Error(errorData.error || t('addWallet.errors.createAccountFailed'));
       }
     } catch (error) {
       console.error('Error creating account:', error);
       Alert.alert(
-        'Error',
-        error.message || 'No se pudo crear la cuenta. Por favor, intenta de nuevo.'
+        t('common.error'),
+        error.message || t('addWallet.errors.createAccountGeneric')
       );
     } finally {
       setSaving(false);
@@ -286,7 +237,7 @@ const AddWalletScreen = () => {
         <Ionicons name="arrow-back" size={24} color={colors.text} />
       </TouchableOpacity>
       
-      <Text style={styles.headerTitle}>Agregar Cuenta</Text>
+      <Text style={styles.headerTitle}>{t('addWallet.title')}</Text>
       
       <TouchableOpacity 
         style={[styles.saveButton, saving && { opacity: 0.7 }]}
@@ -302,44 +253,15 @@ const AddWalletScreen = () => {
     </View>
   );
 
-  const renderAccountTypeSelector = () => (
-    <View style={styles.formGroup}>
-      <Text style={styles.inputLabel}>Categoría de Cuenta *</Text>
-      <TouchableOpacity
-        style={styles.selector}
-        onPress={() => setShowTypeModal(true)}
-      >
-        {accountType ? (
-          <View style={styles.selectedContainer}>
-            <View style={[styles.typeIcon, { backgroundColor: getSelectedAccountType()?.color + '20' }]}>
-              <Ionicons
-                name={getSelectedAccountType()?.icon}
-                size={20}
-                color={getSelectedAccountType()?.color}
-              />
-            </View>
-            <View style={styles.selectedTextContainer}>
-              <Text style={styles.selectedText}>{getSelectedAccountType()?.name}</Text>
-              <Text style={styles.selectedDescription}>{getSelectedAccountType()?.description}</Text>
-            </View>
-          </View>
-        ) : (
-          <Text style={styles.selectorPlaceholder}>Seleccionar categoría</Text>
-        )}
-        <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
-      </TouchableOpacity>
-    </View>
-  );
-
   const renderTipoCuentaSelector = () => (
     <View style={styles.formGroup}>
-      <Text style={styles.inputLabel}>Tipo de Cuenta *</Text>
+      <Text style={styles.inputLabel}>{t('addWallet.fields.accountType')} *</Text>
       <TouchableOpacity
         style={styles.selector}
         onPress={() => setShowTipoCuentaModal(true)}
       >
         <Text style={selectedTipoCuenta ? styles.selectedText : styles.selectorPlaceholder}>
-          {selectedTipoCuenta?.descripcion || 'Seleccionar tipo específico'}
+          {selectedTipoCuenta?.descripcion || t('addWallet.placeholders.selectAccountType')}
         </Text>
         <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
       </TouchableOpacity>
@@ -349,50 +271,38 @@ const AddWalletScreen = () => {
   const renderBasicInfo = () => (
     <>
       <View style={styles.formGroup}>
-        <Text style={styles.inputLabel}>Nombre de la Cuenta *</Text>
+        <Text style={styles.inputLabel}>{t('addWallet.fields.accountName')} *</Text>
         <TextInput
           style={styles.textInput}
           value={accountName}
           onChangeText={setAccountName}
-          placeholder="Ej. Mi Cuenta de Ahorros"
+          placeholder={t('addWallet.placeholders.accountName')}
           placeholderTextColor={colors.textLight}
           maxLength={50}
         />
       </View>
 
-      {accountType === 'bank' && (
-        <View style={styles.formGroup}>
-          <Text style={styles.inputLabel}>Banco *</Text>
-          <TouchableOpacity
-            style={styles.selector}
-            onPress={() => setShowBankModal(true)}
-          >
-            <Text style={selectedBank ? styles.selectedText : styles.selectorPlaceholder}>
-              {selectedBank?.descripcion || 'Seleccionar banco'}
-            </Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
-          </TouchableOpacity>
-        </View>
-      )}
+      <View style={styles.formGroup}>
+        <Text style={styles.inputLabel}>{t('addWallet.fields.bank')}</Text>
+        <TouchableOpacity
+          style={styles.selector}
+          onPress={() => setShowBankModal(true)}
+        >
+          <Text style={selectedBank ? styles.selectedText : styles.selectorPlaceholder}>
+            {selectedBank?.descripcion || t('addWallet.placeholders.selectBank')}
+          </Text>
+          <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.formGroup}>
-        <Text style={styles.inputLabel}>
-          {accountType === 'digital' ? 'Email/Usuario' : 'Número de Cuenta'}
-        </Text>
+        <Text style={styles.inputLabel}>{t('addWallet.fields.accountNumber')}</Text>
         <TextInput
           style={styles.textInput}
           value={accountNumber}
           onChangeText={setAccountNumber}
-          placeholder={
-            accountType === 'digital' 
-              ? "usuario@email.com" 
-              : accountType === 'cash' 
-                ? "No aplica" 
-                : "****1234"
-          }
+          placeholder={t('addWallet.placeholders.accountNumber')}
           placeholderTextColor={colors.textLight}
-          keyboardType={accountType === 'digital' ? 'email-address' : 'default'}
-          editable={accountType !== 'cash'}
         />
       </View>
     </>
@@ -400,7 +310,7 @@ const AddWalletScreen = () => {
 
   const renderAmountInputs = () => (
     <View style={styles.formGroup}>
-      <Text style={styles.inputLabel}>Saldo Inicial *</Text>
+      <Text style={styles.inputLabel}>{t('addWallet.fields.initialBalance')} *</Text>
       <View style={styles.amountInputContainer}>
         <Text style={styles.currencySymbol}>$</Text>
         <TextInput
@@ -415,7 +325,7 @@ const AddWalletScreen = () => {
       </View>
       {initialBalance && (
         <Text style={styles.amountPreview}>
-          Saldo: ${parseFloat(initialBalance || 0).toLocaleString('es-MX', { 
+          {t('addWallet.preview.balance')}: ${parseFloat(initialBalance || 0).toLocaleString('es-MX', { 
             minimumFractionDigits: 2,
             maximumFractionDigits: 2 
           })}
@@ -426,7 +336,7 @@ const AddWalletScreen = () => {
 
   const renderColorSelector = () => (
     <View style={styles.formGroup}>
-      <Text style={styles.inputLabel}>Color de la Cuenta *</Text>
+      <Text style={styles.inputLabel}>{t('addWallet.fields.accountColor')} *</Text>
       <TouchableOpacity
         style={styles.colorSelector}
         onPress={() => setShowColorModal(true)}
@@ -436,7 +346,7 @@ const AddWalletScreen = () => {
           { backgroundColor: selectedColor?.codigo_hex || colors.primary }
         ]} />
         <Text style={styles.colorText}>
-          {selectedColor?.descripcion || 'Seleccionar color'}
+          {selectedColor?.descripcion || t('addWallet.placeholders.selectColor')}
         </Text>
         <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
       </TouchableOpacity>
@@ -445,12 +355,12 @@ const AddWalletScreen = () => {
 
   const renderNotes = () => (
     <View style={styles.formGroup}>
-      <Text style={styles.inputLabel}>Notas (Opcional)</Text>
+      <Text style={styles.inputLabel}>{t('addWallet.fields.notes')}</Text>
       <TextInput
         style={[styles.textInput, styles.notesInput]}
         value={notes}
         onChangeText={setNotes}
-        placeholder="Información adicional sobre esta cuenta..."
+        placeholder={t('addWallet.placeholders.notes')}
         placeholderTextColor={colors.textLight}
         multiline
         numberOfLines={3}
@@ -459,56 +369,12 @@ const AddWalletScreen = () => {
     </View>
   );
 
-  // Modales
-  const renderTypeModal = () => (
-    <Modal visible={showTypeModal} transparent animationType="slide">
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Categoría de Cuenta</Text>
-            <TouchableOpacity onPress={() => setShowTypeModal(false)}>
-              <Ionicons name="close" size={24} color={colors.text} />
-            </TouchableOpacity>
-          </View>
-          
-          <ScrollView style={styles.modalList}>
-            {accountTypes.map((type) => (
-              <TouchableOpacity
-                key={type.type}
-                style={styles.modalOption}
-                onPress={() => {
-                  setAccountType(type.type);
-                  setShowTypeModal(false);
-                  // Reset dependent fields
-                  setSelectedBank(null);
-                  setSelectedTipoCuenta(null);
-                  setAccountNumber('');
-                }}
-              >
-                <View style={[styles.typeIcon, { backgroundColor: type.color + '20' }]}>
-                  <Ionicons name={type.icon} size={24} color={type.color} />
-                </View>
-                <View style={styles.optionTextContainer}>
-                  <Text style={styles.optionTitle}>{type.name}</Text>
-                  <Text style={styles.optionDescription}>{type.description}</Text>
-                </View>
-                {accountType === type.type && (
-                  <Ionicons name="checkmark" size={20} color={colors.success} />
-                )}
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      </View>
-    </Modal>
-  );
-
   const renderTipoCuentaModal = () => (
     <Modal visible={showTipoCuentaModal} transparent animationType="slide">
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Tipo de Cuenta</Text>
+            <Text style={styles.modalTitle}>{t('addWallet.modals.accountType')}</Text>
             <TouchableOpacity onPress={() => setShowTipoCuentaModal(false)}>
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
@@ -541,7 +407,7 @@ const AddWalletScreen = () => {
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Seleccionar Banco</Text>
+            <Text style={styles.modalTitle}>{t('addWallet.modals.selectBank')}</Text>
             <TouchableOpacity onPress={() => setShowBankModal(false)}>
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
@@ -574,7 +440,7 @@ const AddWalletScreen = () => {
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Seleccionar Color</Text>
+            <Text style={styles.modalTitle}>{t('addWallet.modals.selectColor')}</Text>
             <TouchableOpacity onPress={() => setShowColorModal(false)}>
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
@@ -614,7 +480,7 @@ const AddWalletScreen = () => {
         />
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-          {!userId ? 'Cargando usuario...' : 'Cargando formulario...'}
+          {!userId ? t('addWallet.loading.user') : t('addWallet.loading.form')}
         </Text>
       </View>
     );
@@ -639,21 +505,14 @@ const AddWalletScreen = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {renderAccountTypeSelector()}
-          
-          {accountType && (
-            <>
-              {renderTipoCuentaSelector()}
-              {renderBasicInfo()}
-              {renderAmountInputs()}
-              {renderColorSelector()}
-              {renderNotes()}
-            </>
-          )}
+          {renderTipoCuentaSelector()}
+          {renderBasicInfo()}
+          {renderAmountInputs()}
+          {renderColorSelector()}
+          {renderNotes()}
         </ScrollView>
       </KeyboardAvoidingView>
       
-      {renderTypeModal()}
       {renderTipoCuentaModal()}
       {renderBankModal()}
       {renderColorModal()}
@@ -766,13 +625,6 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 2,
   },
-  typeIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   amountInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -854,20 +706,6 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: colors.separator,
-  },
-  optionTextContainer: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  optionTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.text,
-  },
-  optionDescription: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 2,
   },
   bankOptionText: {
     flex: 1,

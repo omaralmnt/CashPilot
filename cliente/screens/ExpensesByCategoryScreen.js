@@ -16,6 +16,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PieChart, BarChart } from 'react-native-chart-kit';
@@ -26,6 +27,7 @@ const ExpensesByCategoryScreen = () => {
   const navigation = useNavigation();
   const { colors, isDark } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { t } = useTranslation();
   
   const [expenses, setExpenses] = useState([]);
   const [categorizedExpenses, setCategorizedExpenses] = useState([]);
@@ -84,14 +86,14 @@ const ExpensesByCategoryScreen = () => {
         if (decodedToken && decodedToken.id_usuario) {
           setCurrentUser(decodedToken);
         } else {
-          throw new Error('Token inválido');
+          throw new Error(t('expenses.errors.invalidToken'));
         }
       } else {
-        throw new Error('No hay token de autenticación');
+        throw new Error(t('expenses.errors.noToken'));
       }
     } catch (error) {
       console.error('Error loading user data:', error);
-      Alert.alert('Error', 'No se pudo cargar la información del usuario');
+      Alert.alert(t('common.error'), t('expenses.errors.loadUserData'));
     }
   };
 
@@ -132,7 +134,7 @@ const ExpensesByCategoryScreen = () => {
       const token = await AsyncStorage.getItem('userToken');
       
       if (!currentUser?.id_usuario) {
-        throw new Error('Usuario no identificado');
+        throw new Error(t('expenses.errors.userNotIdentified'));
       }
 
       console.log('Cargando gastos para usuario:', currentUser.id_usuario);
@@ -162,8 +164,8 @@ const ExpensesByCategoryScreen = () => {
             id: transfer.id_transferencia,
             monto: parseFloat(transfer.monto),
             fecha: transfer.fecha_hora,
-            categoria: transfer.categoria_descripcion || 'Sin categoría',
-            concepto: transfer.concepto || 'Sin concepto',
+            categoria: transfer.categoria_descripcion || t('expenses.noCategory'),
+            concepto: transfer.concepto || t('expenses.noConcept'),
             destinatario: transfer.nombre_destinatario,
             comision: parseFloat(transfer.comision || 0)
           }));
@@ -171,7 +173,7 @@ const ExpensesByCategoryScreen = () => {
         setExpenses(expenseData);
         processExpensesByCategory(expenseData);
       } else {
-        throw new Error(`Error al cargar los gastos: ${response.status}`);
+        throw new Error(t('expenses.errors.loadExpenses', { status: response.status }));
       }
     } catch (error) {
       console.error('Error loading expenses:', error);
@@ -186,12 +188,12 @@ const ExpensesByCategoryScreen = () => {
   };
 
   const getSampleExpenses = () => [
-    { id: 1, monto: 1200, fecha: new Date().toISOString(), categoria: 'Alimentación', concepto: 'Supermercado', destinatario: 'Walmart', comision: 0 },
-    { id: 2, monto: 800, fecha: new Date().toISOString(), categoria: 'Transporte', concepto: 'Gasolina', destinatario: 'Petrobras', comision: 0 },
-    { id: 3, monto: 450, fecha: new Date().toISOString(), categoria: 'Entretenimiento', concepto: 'Cine', destinatario: 'Cinepolis', comision: 0 },
-    { id: 4, monto: 2000, fecha: new Date().toISOString(), categoria: 'Servicios', concepto: 'Internet', destinatario: 'Claro', comision: 0 },
-    { id: 5, monto: 650, fecha: new Date().toISOString(), categoria: 'Alimentación', concepto: 'Restaurante', destinatario: 'McDonald\'s', comision: 0 },
-    { id: 6, monto: 300, fecha: new Date().toISOString(), categoria: 'Otros', concepto: 'Farmacia', destinatario: 'Farmacias Carol', comision: 0 },
+    { id: 1, monto: 1200, fecha: new Date().toISOString(), categoria: t('expenses.categories.food'), concepto: t('expenses.concepts.supermarket'), destinatario: 'Walmart', comision: 0 },
+    { id: 2, monto: 800, fecha: new Date().toISOString(), categoria: t('expenses.categories.transport'), concepto: t('expenses.concepts.fuel'), destinatario: 'Petrobras', comision: 0 },
+    { id: 3, monto: 450, fecha: new Date().toISOString(), categoria: t('expenses.categories.entertainment'), concepto: t('expenses.concepts.cinema'), destinatario: 'Cinepolis', comision: 0 },
+    { id: 4, monto: 2000, fecha: new Date().toISOString(), categoria: t('expenses.categories.services'), concepto: t('expenses.concepts.internet'), destinatario: 'Claro', comision: 0 },
+    { id: 5, monto: 650, fecha: new Date().toISOString(), categoria: t('expenses.categories.food'), concepto: t('expenses.concepts.restaurant'), destinatario: 'McDonald\'s', comision: 0 },
+    { id: 6, monto: 300, fecha: new Date().toISOString(), categoria: t('expenses.categories.others'), concepto: t('expenses.concepts.pharmacy'), destinatario: 'Farmacias Carol', comision: 0 },
   ];
 
   const processExpensesByCategory = (expenseData) => {
@@ -253,11 +255,11 @@ const ExpensesByCategoryScreen = () => {
 
   const getPeriodLabel = () => {
     switch (selectedPeriod) {
-      case 'week': return 'Esta semana';
-      case 'month': return 'Este mes';
-      case 'quarter': return 'Este trimestre';
-      case 'year': return 'Este año';
-      default: return 'Este mes';
+      case 'week': return t('expenses.periods.thisWeek');
+      case 'month': return t('expenses.periods.thisMonth');
+      case 'quarter': return t('expenses.periods.thisQuarter');
+      case 'year': return t('expenses.periods.thisYear');
+      default: return t('expenses.periods.thisMonth');
     }
   };
 
@@ -270,7 +272,7 @@ const ExpensesByCategoryScreen = () => {
         <Ionicons name="arrow-back" size={24} color={colors.text} />
       </TouchableOpacity>
       
-      <Text style={styles.headerTitle}>Gastos por Categoría</Text>
+      <Text style={styles.headerTitle}>{t('expenses.title')}</Text>
       
       <TouchableOpacity 
         style={styles.chartToggleButton}
@@ -300,9 +302,7 @@ const ExpensesByCategoryScreen = () => {
             styles.periodButtonText,
             selectedPeriod === period && styles.periodButtonTextActive
           ]}>
-            {period === 'week' ? '7D' : 
-             period === 'month' ? '1M' : 
-             period === 'quarter' ? '3M' : '1A'}
+            {t(`expenses.periodLabels.${period}`)}
           </Text>
         </TouchableOpacity>
       ))}
@@ -312,15 +312,15 @@ const ExpensesByCategoryScreen = () => {
   const renderSummaryCards = () => (
     <View style={styles.summaryContainer}>
       <View style={styles.summaryCard}>
-        <Text style={styles.summaryLabel}>Total Gastado</Text>
+        <Text style={styles.summaryLabel}>{t('expenses.summary.totalSpent')}</Text>
         <Text style={styles.summaryAmount}>{formatCurrency(totalExpenses)}</Text>
         <Text style={styles.summaryPeriod}>{getPeriodLabel()}</Text>
       </View>
       
       <View style={styles.summaryCard}>
-        <Text style={styles.summaryLabel}>Categorías</Text>
+        <Text style={styles.summaryLabel}>{t('expenses.summary.categories')}</Text>
         <Text style={styles.summaryAmount}>{categorizedExpenses.length}</Text>
-        <Text style={styles.summaryPeriod}>Activas</Text>
+        <Text style={styles.summaryPeriod}>{t('expenses.summary.active')}</Text>
       </View>
     </View>
   );
@@ -330,7 +330,7 @@ const ExpensesByCategoryScreen = () => {
       return (
         <View style={styles.emptyChart}>
           <Ionicons name="pie-chart-outline" size={64} color={colors.textLight} />
-          <Text style={styles.emptyChartText}>No hay gastos en este período</Text>
+          <Text style={styles.emptyChartText}>{t('expenses.chart.noData')}</Text>
         </View>
       );
     }
@@ -406,7 +406,7 @@ const ExpensesByCategoryScreen = () => {
 
   const renderCategoryList = () => (
     <View style={styles.categoryListContainer}>
-      <Text style={styles.sectionTitle}>Desglose por Categoría</Text>
+      <Text style={styles.sectionTitle}>{t('expenses.categoryBreakdown')}</Text>
       {categorizedExpenses.map((category, index) => (
         <TouchableOpacity
           key={category.name}
@@ -423,7 +423,7 @@ const ExpensesByCategoryScreen = () => {
             <View style={styles.categoryInfo}>
               <Text style={styles.categoryName}>{category.name}</Text>
               <Text style={styles.categoryCount}>
-                {category.count} transacción{category.count !== 1 ? 'es' : ''}
+                {t('expenses.transactionCount', { count: category.count })}
               </Text>
             </View>
           </View>
@@ -476,12 +476,15 @@ const ExpensesByCategoryScreen = () => {
                 {formatCurrency(selectedCategory?.total || 0)}
               </Text>
               <Text style={styles.categoryDetailSubtext}>
-                {selectedCategory?.count} transacciones • {selectedCategory?.percentage?.toFixed(1)}% del total
+                {t('expenses.modal.categoryDetails', { 
+                  count: selectedCategory?.count, 
+                  percentage: selectedCategory?.percentage?.toFixed(1) 
+                })}
               </Text>
             </View>
           </View>
           
-          <Text style={styles.transactionListTitle}>Transacciones</Text>
+          <Text style={styles.transactionListTitle}>{t('expenses.modal.transactions')}</Text>
           
           <FlatList
             data={selectedCategory?.expenses || []}
@@ -513,7 +516,7 @@ const ExpensesByCategoryScreen = () => {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Cargando gastos...</Text>
+        <Text style={styles.loadingText}>{t('common.loading')}</Text>
       </View>
     );
   }

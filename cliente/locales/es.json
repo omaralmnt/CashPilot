@@ -1,0 +1,410 @@
+{
+  "locale": "es-MX",
+  "common": {
+    "cancel": "Cancelar",
+    "ok": "OK",
+    "save": "Guardar",
+    "close": "Cerrar",
+    "success": "Éxito",
+    "error": "Error",
+    "loading": "Cargando...",
+    "retry": "Reintentar",
+    "comingSoon": "Próximamente",
+    "featureComingSoon": "Esta función estará disponible pronto",
+    "seeAll": "Ver todas",
+    "seeMore": "Ver más",
+    "defaultUser": "Usuario"
+  },
+  "profile": {
+    "title": "Mi Perfil",
+    "defaultUser": "Usuario",
+    "subtitle": "Administra tus finanzas de forma inteligente",
+    "logout": "Cerrar Sesión",
+    "logoutConfirm": "¿Estás seguro de que quieres cerrar sesión?",
+    "settings": "Configuración",
+    "editProfile": "Editar Perfil",
+    "editProfileDescription": "Cambiar información personal y contraseña",
+    "customCategories": "Categorías Personalizadas",
+    "customCategoriesDescription": "Crear y administrar categorías de gastos e ingresos",
+    "language": "Idioma",
+    "selectLanguage": "Seleccionar Idioma",
+    "selectTheme": "Seleccionar Tema",
+    "theme": {
+      "title": "Tema",
+      "light": "Modo Claro",
+      "dark": "Modo Oscuro",
+      "system": "Modo Sistema"
+    },
+    "themeDescription": {
+      "light": "Interfaz clara para mejor visibilidad durante el día",
+      "dark": "Interfaz oscura para reducir la fatiga visual",
+      "system": "Sigue automáticamente la configuración del sistema"
+    },
+    "stats": {
+      "totalControl": "Control Total",
+      "finances": "de tus finanzas",
+      "growth": "Crecimiento",
+      "intelligent": "inteligente",
+      "security": "Seguridad",
+      "guaranteed": "garantizada"
+    },
+    "appInfo": {
+      "title": "CashPilot v2.1.0",
+      "description": "Tu piloto financiero personal que te ayuda a navegar hacia tus metas económicas"
+    }
+  },
+  "greetings": {
+    "morning": "Buenos días",
+    "afternoon": "Buenas tardes",
+    "evening": "Buenas noches"
+  },
+  "home": {
+    "totalBalance": "Balance Total",
+    "income": "Ingresos",
+    "expenses": "Gastos",
+    "quickActions": {
+      "title": "Acciones Rápidas",
+      "newTransfer": "Nueva\nTransferencia",
+      "newAccount": "Nueva\nCuenta"
+    },
+    "recentTransactions": "Transacciones Recientes",
+    "noRecentTransactions": "No hay transacciones recientes",
+    "makeFirstTransfer": "Realizar primera transferencia",
+    "expensesByCategory": "Gastos por Categoría",
+    "noExpenseCategories": "No hay gastos por categoría aún",
+    "makeTransactionsToSeeAnalysis": "Realiza algunas transacciones para ver tu análisis de gastos",
+    "spentThisMonth": "gastados este mes",
+    "transactionCount": "{{count}} transacción",
+    "transactionCount_plural": "{{count}} transacciones",
+    "newTransfer": "Nueva Transferencia"
+  },
+  "periods": {
+    "today": "Hoy",
+    "thisWeek": "Esta Semana",
+    "thisMonth": "Este Mes",
+    "thisYear": "Este Año"
+  },
+  "dates": {
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "daysAgo": "{{count}} día",
+    "daysAgo_plural": "{{count}} días"
+  },
+  "transactions": {
+    "receivedFrom": "Recibido de {{name}}",
+    "sentTo": "Enviado a {{name}}",
+    "internalTransfer": "Transferencia interna",
+    "transaction": "Transacción",
+    "external": "Externo",
+    "income": "Ingreso",
+    "payment": "Pago",
+    "transfer": "Transferencia",
+    "sourceAccount": "Cuenta origen",
+    "destinationAccount": "Cuenta destino",
+    "noConcept": "Sin concepto"
+  },
+  "categories": {
+    "food": "Alimentación",
+    "transport": "Transporte",
+    "entertainment": "Entretenimiento",
+    "services": "Servicios",
+    "health": "Salud",
+    "education": "Educación",
+    "clothing": "Ropa",
+    "home": "Hogar",
+    "others": "Otros",
+    "uncategorized": "Sin categoría"
+  },
+  "sample": {
+    "supermarket": "Supermercado",
+    "gas": "Gasolina",
+    "cinema": "Cine",
+    "internet": "Internet",
+    "restaurant": "Restaurante"
+  },
+  "errors": {
+    "userNotIdentified": "Usuario no identificado",
+    "loadExpensesError": "Error al cargar los gastos",
+    "loadTransactionsError": "Error al cargar las transacciones",
+    "invalidServerResponse": "Respuesta del servidor inválida al cargar transacciones"
+  },
+  "loading": {
+    "transactions": "Cargando transacciones...",
+    "categories": "Cargando categorías..."
+  },
+  "addWallet": {
+    "title": "Agregar Cuenta",
+    "fields": {
+      "accountType": "Tipo de Cuenta",
+      "accountName": "Nombre de la Cuenta",
+      "bank": "Banco (Opcional)",
+      "accountNumber": "Número de Cuenta",
+      "initialBalance": "Saldo Inicial",
+      "accountColor": "Color de la Cuenta",
+      "notes": "Notas (Opcional)"
+    },
+    "placeholders": {
+      "selectAccountType": "Seleccionar tipo de cuenta",
+      "accountName": "Ej. Mi Cuenta de Ahorros",
+      "selectBank": "Seleccionar banco",
+      "accountNumber": "****1234",
+      "selectColor": "Seleccionar color",
+      "notes": "Información adicional sobre esta cuenta..."
+    },
+    "modals": {
+      "accountType": "Tipo de Cuenta",
+      "selectBank": "Seleccionar Banco",
+      "selectColor": "Seleccionar Color"
+    },
+    "validation": {
+      "accountNameRequired": "Por favor ingresa un nombre para la cuenta",
+      "accountTypeRequired": "Por favor selecciona el tipo de cuenta",
+      "colorRequired": "Por favor selecciona un color para la cuenta",
+      "validBalanceRequired": "Por favor ingresa un saldo inicial válido"
+    },
+    "errors": {
+      "userInfoNotFound": "No se pudo obtener la información del usuario del token",
+      "userTokenNotFound": "Token de usuario no encontrado",
+      "tokenProcessError": "Error al procesar el token de usuario",
+      "loadInitialData": "No se pudieron cargar los datos necesarios",
+      "createAccountFailed": "Error al crear la cuenta",
+      "createAccountGeneric": "No se pudo crear la cuenta. Por favor, intenta de nuevo."
+    },
+    "success": {
+      "accountCreated": "Cuenta creada correctamente"
+    },
+    "loading": {
+      "user": "Cargando usuario...",
+      "form": "Cargando formulario..."
+    },
+    "preview": {
+      "balance": "Saldo"
+    }
+  },
+    "transfers": {
+    "title": "Transferencias",
+    "loading": {
+      "transfers": "Cargando transferencias..."
+    },
+    "errors": {
+      "loadUserData": "No se pudo cargar la información del usuario",
+      "loadTransfers": "No se pudieron cargar las transferencias: {{error}}"
+    },
+    "time": {
+      "today": "Hoy",
+      "yesterday": "Ayer",
+      "daysAgo": "{{days}} días"
+    },
+    "search": {
+      "placeholder": "Buscar por concepto, destinatario, banco..."
+    },
+    "filters": {
+      "all": "Todas",
+      "sent": "Enviadas",
+      "received": "Recibidas",
+      "internal": "Internas"
+    },
+    "advancedFilters": {
+      "date": {
+        "title": "Fecha",
+        "all": "Todas",
+        "today": "Hoy",
+        "lastWeek": "Última semana",
+        "lastMonth": "Último mes",
+        "custom": "Personalizado"
+      },
+      "amount": {
+        "title": "Monto",
+        "all": "Todos",
+        "low": "Menos de $500",
+        "medium": "$500 - $2,000",
+        "high": "Más de $2,000",
+        "custom": "Personalizado"
+      },
+      "status": {
+        "title": "Estado",
+        "all": "Todos",
+        "completed": "Completada",
+        "pending": "Pendiente",
+        "failed": "Fallida"
+      },
+      "bank": {
+        "title": "Banco",
+        "all": "Todos los bancos"
+      },
+      "sort": {
+        "title": "Ordenar por",
+        "newest": "Más recientes",
+        "oldest": "Más antiguas",
+        "highestAmount": "Mayor monto",
+        "lowestAmount": "Menor monto"
+      },
+      "clearFilters": "Limpiar filtros",
+      "applyFilters": "Aplicar"
+    },
+    "results": {
+      "showing": "Mostrando {{filtered}} de {{total}} transferencias",
+      "clearFilters": "Limpiar filtros"
+    },
+    "item": {
+      "sentTo": "Enviado a {{recipient}}",
+      "receivedFrom": "Recibido de {{sender}}",
+      "internalTransfer": "Transferencia interna",
+      "internalSubtitle": "{{from}} → {{to}}",
+      "transfer": "Transferencia",
+      "infoNotAvailable": "Información no disponible",
+      "commission": "Comisión"
+    },
+    "status": {
+      "completed": "Completada",
+      "pending": "Pendiente",
+      "failed": "Fallida"
+    },
+    "detail": {
+      "title": "Detalle de Transferencia",
+      "amount": "Monto",
+      "from": "De",
+      "to": "Para",
+      "date": "Fecha",
+      "concept": "Concepto",
+      "commission": "Comisión",
+      "category": "Categoría",
+      "status": "Estado",
+      "external": "Externo"
+    },
+    "empty": {
+      "title": "No hay transferencias",
+      "noTransfers": "Aún no has realizado ninguna transferencia",
+      "noSent": "No has enviado transferencias",
+      "noReceived": "No has recibido transferencias",
+      "noInternal": "No tienes transferencias internas",
+      "searchResults": "No se encontraron resultados para \"{{query}}\"",
+      "firstTransfer": "Realizar primera transferencia"
+    },
+    "newTransfer": {
+      "title": "Nueva Transferencia"
+    }
+  },
+   "expenses": {
+    "title": "Gastos por Categoría",
+    "errors": {
+      "invalidToken": "Token inválido",
+      "noToken": "No hay token de autenticación",
+      "loadUserData": "No se pudo cargar la información del usuario",
+      "userNotIdentified": "Usuario no identificado",
+      "loadExpenses": "Error al cargar los gastos: {{status}}"
+    },
+    "noCategory": "Sin categoría",
+    "noConcept": "Sin concepto",
+    "categories": {
+      "food": "Alimentación",
+      "transport": "Transporte",
+      "entertainment": "Entretenimiento",
+      "services": "Servicios",
+      "others": "Otros"
+    },
+    "concepts": {
+      "supermarket": "Supermercado",
+      "fuel": "Gasolina",
+      "cinema": "Cine",
+      "internet": "Internet",
+      "restaurant": "Restaurante",
+      "pharmacy": "Farmacia"
+    },
+    "periods": {
+      "thisWeek": "Esta semana",
+      "thisMonth": "Este mes",
+      "thisQuarter": "Este trimestre",
+      "thisYear": "Este año"
+    },
+    "periodLabels": {
+      "week": "7D",
+      "month": "1M",
+      "quarter": "3M",
+      "year": "1A"
+    },
+    "summary": {
+      "totalSpent": "Total Gastado",
+      "categories": "Categorías",
+      "active": "Activas"
+    },
+    "chart": {
+      "noData": "No hay gastos en este período"
+    },
+    "categoryBreakdown": "Desglose por Categoría",
+    "transactionCount": "{{count}} transacción",
+    "transactionCount_plural": "{{count}} transacciones",
+    "modal": {
+      "categoryDetails": "{{count}} transacciones • {{percentage}}% del total",
+      "transactions": "Transacciones"
+    }
+  },
+  "transfer": {
+    "title": "Transferir",
+    "newTransaction": "Nueva Transacción",
+    "transactionType": "Tipo de Transacción",
+    "amount": "Monto",
+    "amountPlaceholder": "0.00",
+    "fromAccount": "Desde Cuenta",
+    "toAccount": "Hacia Cuenta",
+    "originAccount": "Cuenta Origen",
+    "destinationAccount": "Cuenta Destino",
+    "selectOriginAccount": "Seleccionar Cuenta Origen",
+    "selectDestinationAccount": "Seleccionar Cuenta Destino",
+    "selectAccount": "Seleccionar Cuenta",
+    "category": "Categoría",
+    "selectCategory": "Seleccionar Categoría",
+    "recipient": "Destinatario",
+    "sender": "Remitente",
+    "fullName": "Nombre completo",
+    "commission": "Comisión",
+    "concept": "Concepto",
+    "description": "Descripción",
+    "descriptionPlaceholder": "Descripción opcional...",
+    "optionalDescription": "Descripción opcional...",
+    "transferButton": "Transferir",
+    "payButton": "Pagar",
+    "registerButton": "Registrar",
+    "processing": "Procesando...",
+    "summary": "Resumen de Transferencia",
+    "from": "Desde",
+    "to": "Hacia",
+    "newBalance": "Nuevo Saldo",
+    "executeTransfer": "Ejecutar Transferencia",
+    "confirm": "Confirmar",
+    "defaultDescription": "Transferencia entre cuentas",
+    "completedSuccessfully": "Transferencia realizada correctamente",
+    "types": {
+      "transfer": "Transferencia",
+      "transferSubtitle": "Entre tus cuentas",
+      "payment": "Pago",
+      "paymentSubtitle": "A terceros",
+      "receive": "Recibir",
+      "receiveSubtitle": "Dinero entrante"
+    },
+    "confirmTransfer": {
+      "title": "Confirmar Transferencia",
+      "message": "¿Estás seguro de que quieres transferir {{amount}} desde {{origin}} hacia {{destination}}?"
+    },
+    "success": {
+      "title": "Transferencia Exitosa",
+      "message": "La transferencia se ha completado exitosamente."
+    },
+    "errors": {
+      "noToken": "Token de autenticación no encontrado. Por favor, inicia sesión nuevamente.",
+      "invalidToken": "Token de autenticación inválido.",
+      "loadAccounts": "Error al cargar las cuentas. Por favor, intenta nuevamente.",
+      "loadUserData": "Error al cargar datos del usuario.",
+      "invalidAmount": "Por favor, ingresa un monto válido mayor a cero.",
+      "selectOrigin": "Por favor, selecciona una cuenta origen.",
+      "selectDestination": "Por favor, selecciona una cuenta destino.",
+      "sameAccount": "Las cuentas origen y destino no pueden ser la misma.",
+      "completeFields": "Por favor, completa todos los campos requeridos.",
+      "insufficientFunds": "Fondos insuficientes en la cuenta origen.",
+      "transferFailed": "Error al ejecutar la transferencia. Por favor, intenta nuevamente.",
+      "invalidResponse": "Respuesta del servidor inválida (Estado: {{status}}): {{response}}",
+      "serverError": "Error del servidor (Estado: {{status}})",
+      "transactionFailed": "Error al procesar la transacción."
+    }
+  }
+}

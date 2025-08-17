@@ -15,6 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTranslation } from 'react-i18next'; // Agregado
 import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
 import Constants from 'expo-constants';
 
@@ -26,9 +27,10 @@ const { width } = Dimensions.get('window');
 const HomeScreen = () => {
   const navigation = useNavigation();
   const { colors, isDark } = useTheme();
+  const { t } = useTranslation(); // Hook de traducción
   const styles = useThemedStyles(createStyles);
   
-  const [selectedPeriod, setSelectedPeriod] = useState('Este Mes');
+  const [selectedPeriod, setSelectedPeriod] = useState('thisMonth'); // Cambiado a key para traducción
   const [userName, setUserName] = useState('Usuario');
   const [currentUser, setCurrentUser] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -103,7 +105,7 @@ const HomeScreen = () => {
         console.log('JWT Payload:', decodedToken);
         
         if (decodedToken && decodedToken.id_usuario) {
-          setUserName(decodedToken.nombre || 'Usuario');
+          setUserName(decodedToken.nombre || t('common.defaultUser'));
           setCurrentUser(decodedToken);
           // Cargar datos adicionales
           await Promise.all([
@@ -139,7 +141,7 @@ const HomeScreen = () => {
       const userIdToUse = userId || currentUser?.id_usuario;
       
       if (!userIdToUse) {
-        throw new Error('Usuario no identificado');
+        throw new Error(t('errors.userNotIdentified'));
       }
 
       console.log('Cargando gastos por categoría para usuario:', userIdToUse);
@@ -169,15 +171,15 @@ const HomeScreen = () => {
             id: transfer.id_transferencia,
             monto: parseFloat(transfer.monto),
             fecha: transfer.fecha_hora,
-            categoria: transfer.categoria_descripcion || 'Sin categoría',
-            concepto: transfer.concepto || 'Sin concepto',
+            categoria: transfer.categoria_descripcion || t('categories.uncategorized'),
+            concepto: transfer.concepto || t('transactions.noConcept'),
             destinatario: transfer.nombre_destinatario,
             comision: parseFloat(transfer.comision || 0)
           }));
 
         processExpensesByCategory(expenseData);
       } else {
-        throw new Error(`Error al cargar los gastos: ${response.status}`);
+        throw new Error(`${t('errors.loadExpensesError')}: ${response.status}`);
       }
     } catch (error) {
       console.error('Error loading expenses by category:', error);
@@ -191,11 +193,11 @@ const HomeScreen = () => {
 
   // Función auxiliar para datos de ejemplo
   const getSampleExpenses = () => [
-    { id: 1, monto: 1200, fecha: new Date().toISOString(), categoria: 'Alimentación', concepto: 'Supermercado', destinatario: 'Walmart', comision: 0 },
-    { id: 2, monto: 800, fecha: new Date().toISOString(), categoria: 'Transporte', concepto: 'Gasolina', destinatario: 'Petrobras', comision: 0 },
-    { id: 3, monto: 450, fecha: new Date().toISOString(), categoria: 'Entretenimiento', concepto: 'Cine', destinatario: 'Cinepolis', comision: 0 },
-    { id: 4, monto: 2000, fecha: new Date().toISOString(), categoria: 'Servicios', concepto: 'Internet', destinatario: 'Claro', comision: 0 },
-    { id: 5, monto: 650, fecha: new Date().toISOString(), categoria: 'Alimentación', concepto: 'Restaurante', destinatario: 'McDonald\'s', comision: 0 },
+    { id: 1, monto: 1200, fecha: new Date().toISOString(), categoria: t('categories.food'), concepto: t('sample.supermarket'), destinatario: 'Walmart', comision: 0 },
+    { id: 2, monto: 800, fecha: new Date().toISOString(), categoria: t('categories.transport'), concepto: t('sample.gas'), destinatario: 'Petrobras', comision: 0 },
+    { id: 3, monto: 450, fecha: new Date().toISOString(), categoria: t('categories.entertainment'), concepto: t('sample.cinema'), destinatario: 'Cinepolis', comision: 0 },
+    { id: 4, monto: 2000, fecha: new Date().toISOString(), categoria: t('categories.services'), concepto: t('sample.internet'), destinatario: 'Claro', comision: 0 },
+    { id: 5, monto: 650, fecha: new Date().toISOString(), categoria: t('categories.food'), concepto: t('sample.restaurant'), destinatario: 'McDonald\'s', comision: 0 },
   ];
 
   // Nueva función para procesar gastos por categoría
@@ -243,16 +245,16 @@ const HomeScreen = () => {
   // Nueva función para obtener íconos por categoría
   const getCategoryIcon = (categoryName) => {
     const categoryIcons = {
-      'Alimentación': 'restaurant',
-      'Transporte': 'car',
-      'Entretenimiento': 'film',
-      'Servicios': 'wifi',
-      'Salud': 'medical',
-      'Educación': 'school',
-      'Ropa': 'shirt',
-      'Hogar': 'home',
-      'Otros': 'ellipsis-horizontal',
-      'Sin categoría': 'help-circle'
+      [t('categories.food')]: 'restaurant',
+      [t('categories.transport')]: 'car',
+      [t('categories.entertainment')]: 'film',
+      [t('categories.services')]: 'wifi',
+      [t('categories.health')]: 'medical',
+      [t('categories.education')]: 'school',
+      [t('categories.clothing')]: 'shirt',
+      [t('categories.home')]: 'home',
+      [t('categories.others')]: 'ellipsis-horizontal',
+      [t('categories.uncategorized')]: 'help-circle'
     };
     
     return categoryIcons[categoryName] || 'card';
@@ -264,7 +266,7 @@ const HomeScreen = () => {
       const userIdToUse = userId || currentUser?.id_usuario;
       
       if (!userIdToUse) {
-        throw new Error('Usuario no identificado');
+        throw new Error(t('errors.userNotIdentified'));
       }
 
       console.log('Cargando transacciones recientes para usuario:', userIdToUse);
@@ -316,10 +318,10 @@ const HomeScreen = () => {
           setRecentTransactions(sortedTransactions);
         } catch (parseError) {
           console.error('JSON Parse Error for transactions:', parseError);
-          throw new Error('Respuesta del servidor inválida al cargar transacciones');
+          throw new Error(t('errors.invalidServerResponse'));
         }
       } else {
-        throw new Error(`Error al cargar las transacciones: ${response.status}`);
+        throw new Error(`${t('errors.loadTransactionsError')}: ${response.status}`);
       }
     } catch (error) {
       console.error('Error loading transactions:', error);
@@ -334,7 +336,7 @@ const HomeScreen = () => {
       const userIdToUse = userId || currentUser?.id_usuario;
       
       if (!userIdToUse) {
-        throw new Error('Usuario no identificado');
+        throw new Error(t('errors.userNotIdentified'));
       }
 
       console.log('Cargando resumen financiero para usuario:', userIdToUse);
@@ -358,17 +360,17 @@ const HomeScreen = () => {
     }
   };
 
-  // Funciones auxiliares para mapear datos (sin cambios)
+  // Funciones auxiliares para mapear datos
   const getTransactionTitle = (transfer) => {
     switch (transfer.tipo_transaccion) {
       case 'receive':
-        return `Recibido de ${transfer.nombre_destinatario || 'Externo'}`;
+        return t('transactions.receivedFrom', { name: transfer.nombre_destinatario || t('transactions.external') });
       case 'payment':
-        return `Enviado a ${transfer.nombre_destinatario}`;
+        return t('transactions.sentTo', { name: transfer.nombre_destinatario });
       case 'transfer':
-        return 'Transferencia interna';
+        return t('transactions.internalTransfer');
       default:
-        return transfer.concepto || 'Transacción';
+        return transfer.concepto || t('transactions.transaction');
     }
   };
 
@@ -389,24 +391,24 @@ const HomeScreen = () => {
   const getTransactionCategory = (transfer) => {
     switch (transfer.tipo_transaccion) {
       case 'receive':
-        return 'Ingreso';
+        return t('transactions.income');
       case 'payment':
-        return 'Pago';
+        return t('transactions.payment');
       case 'transfer':
-        return 'Transferencia';
+        return t('transactions.transfer');
       default:
-        return 'Transacción';
+        return t('transactions.transaction');
     }
   };
 
   const getTransactionWallet = (transfer) => {
     const sourceWallet = {
-      name: transfer.banco_origen || 'Cuenta origen',
+      name: transfer.banco_origen || t('transactions.sourceAccount'),
       color: '#004481'
     };
     
     const destWallet = {
-      name: transfer.banco_destino || 'Cuenta destino',
+      name: transfer.banco_destino || t('transactions.destinationAccount'),
       color: '#E31837'
     };
 
@@ -445,11 +447,11 @@ const HomeScreen = () => {
     const diffTime = now - date;
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays === 0) return 'Hoy';
-    if (diffDays === 1) return 'Ayer';
-    if (diffDays < 7) return `${diffDays} días`;
+    if (diffDays === 0) return t('dates.today');
+    if (diffDays === 1) return t('dates.yesterday');
+    if (diffDays < 7) return t('dates.daysAgo', { count: diffDays });
     
-    return date.toLocaleDateString('es-MX', {
+    return date.toLocaleDateString(t('locale'), {
       day: '2-digit',
       month: 'short'
     });
@@ -457,7 +459,7 @@ const HomeScreen = () => {
 
   const formatTransactionTime = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString('es-MX', { 
+    return date.toLocaleTimeString(t('locale'), { 
       hour: '2-digit', 
       minute: '2-digit' 
     });
@@ -471,13 +473,13 @@ const HomeScreen = () => {
   const quickActions = [
     { 
       id: 'new_transfer', 
-      title: 'Nueva\nTransferencia', 
+      title: t('home.quickActions.newTransfer'), 
       icon: 'add-circle', 
       color: colors.primary 
     },
     { 
       id: 'add_account', 
-      title: 'Nueva\nCuenta', 
+      title: t('home.quickActions.newAccount'), 
       icon: 'wallet', 
       color: colors.success 
     },
@@ -485,13 +487,13 @@ const HomeScreen = () => {
 
   const getGreeting = () => {
     const hour = currentTime.getHours();
-    if (hour < 12) return 'Buenos días';
-    if (hour < 18) return 'Buenas tardes';
-    return 'Buenas noches';
+    if (hour < 12) return t('greetings.morning');
+    if (hour < 18) return t('greetings.afternoon');
+    return t('greetings.evening');
   };
 
   const formatCurrency = (amount) => {
-    return `$${Math.abs(amount).toLocaleString('es-MX', { 
+    return `$${Math.abs(amount).toLocaleString(t('locale'), { 
       minimumFractionDigits: 2,
       maximumFractionDigits: 2 
     })}`;
@@ -509,7 +511,7 @@ const HomeScreen = () => {
         navigation.navigate('Transferencias');
         break;
       default:
-        Alert.alert('Próximamente', 'Esta función estará disponible pronto');
+        Alert.alert(t('common.comingSoon'), t('common.featureComingSoon'));
     }
   };
 
@@ -518,7 +520,15 @@ const HomeScreen = () => {
     loadRecentTransactions();
     loadFinancialSummary();
     loadExpensesByCategory(); // Recargar categorías después de una transferencia
-    Alert.alert('Éxito', 'Transferencia realizada correctamente');
+    Alert.alert(t('common.success'), t('transfer.completedSuccessfully'));
+  };
+
+  // Función para cambiar período con opciones traducidas
+  const cyclePeriod = () => {
+    const periods = ['today', 'thisWeek', 'thisMonth', 'thisYear'];
+    const currentIndex = periods.indexOf(selectedPeriod);
+    const nextIndex = (currentIndex + 1) % periods.length;
+    setSelectedPeriod(periods[nextIndex]);
   };
 
   const renderHeader = () => (
@@ -531,7 +541,7 @@ const HomeScreen = () => {
       </View>
       
       <Text style={styles.currentDate}>
-        {currentTime.toLocaleDateString('es-ES', { 
+        {currentTime.toLocaleDateString(t('locale'), { 
           weekday: 'long', 
           day: 'numeric', 
           month: 'long' 
@@ -543,17 +553,12 @@ const HomeScreen = () => {
   const renderBalanceCard = () => (
     <View style={styles.balanceCard}>
       <View style={styles.balanceHeader}>
-        <Text style={styles.balanceLabel}>Balance Total</Text>
+        <Text style={styles.balanceLabel}>{t('home.totalBalance')}</Text>
         <TouchableOpacity 
           style={styles.periodSelector}
-          onPress={() => {
-            const periods = ['Hoy', 'Esta Semana', 'Este Mes', 'Este Año'];
-            const currentIndex = periods.indexOf(selectedPeriod);
-            const nextIndex = (currentIndex + 1) % periods.length;
-            setSelectedPeriod(periods[nextIndex]);
-          }}
+          onPress={cyclePeriod}
         >
-          <Text style={styles.periodText}>{selectedPeriod}</Text>
+          <Text style={styles.periodText}>{t(`periods.${selectedPeriod}`)}</Text>
           <Ionicons name="chevron-down" size={16} color="white" style={{ marginLeft: 4 }} />
         </TouchableOpacity>
       </View>
@@ -568,7 +573,7 @@ const HomeScreen = () => {
             <Ionicons name="trending-up" size={20} color={colors.success} />
           </View>
           <View>
-            <Text style={styles.incomeExpenseLabel}>Ingresos</Text>
+            <Text style={styles.incomeExpenseLabel}>{t('home.income')}</Text>
             <Text style={[styles.incomeExpenseAmount, { color: colors.success }]}>
               +{formatCurrency(monthlyIncome)}
             </Text>
@@ -582,7 +587,7 @@ const HomeScreen = () => {
             <Ionicons name="trending-down" size={20} color={colors.error} />
           </View>
           <View>
-            <Text style={styles.incomeExpenseLabel}>Gastos</Text>
+            <Text style={styles.incomeExpenseLabel}>{t('home.expenses')}</Text>
             <Text style={[styles.incomeExpenseAmount, { color: colors.error }]}>
               -{formatCurrency(monthlyExpenses)}
             </Text>
@@ -594,7 +599,7 @@ const HomeScreen = () => {
 
   const renderQuickActions = () => (
     <View style={styles.quickActionsContainer}>
-      <Text style={styles.sectionTitle}>Acciones Rápidas</Text>
+      <Text style={styles.sectionTitle}>{t('home.quickActions.title')}</Text>
       <View style={styles.quickActionsGrid}>
         {quickActions.map((action) => (
           <TouchableOpacity
@@ -613,26 +618,26 @@ const HomeScreen = () => {
   const renderRecentTransactions = () => (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Transacciones Recientes</Text>
+        <Text style={styles.sectionTitle}>{t('home.recentTransactions')}</Text>
         <TouchableOpacity onPress={() => navigation.navigate('Transacciones')}>
-          <Text style={styles.seeAllText}>Ver todas</Text>
+          <Text style={styles.seeAllText}>{t('common.seeAll')}</Text>
         </TouchableOpacity>
       </View>
       
       {isLoadingData && recentTransactions.length === 0 ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color={colors.primary} />
-          <Text style={styles.loadingText}>Cargando transacciones...</Text>
+          <Text style={styles.loadingText}>{t('loading.transactions')}</Text>
         </View>
       ) : recentTransactions.length === 0 ? (
         <View style={styles.emptyTransactions}>
           <Ionicons name="swap-horizontal-outline" size={48} color={colors.textLight} />
-          <Text style={styles.emptyTransactionsText}>No hay transacciones recientes</Text>
+          <Text style={styles.emptyTransactionsText}>{t('home.noRecentTransactions')}</Text>
           <TouchableOpacity 
             style={styles.emptyTransactionsButton}
             onPress={() => setShowTransferModal(true)}
           >
-            <Text style={styles.emptyTransactionsButtonText}>Realizar primera transferencia</Text>
+            <Text style={styles.emptyTransactionsButtonText}>{t('home.makeFirstTransfer')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -677,23 +682,23 @@ const HomeScreen = () => {
   const renderTopCategories = () => (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Gastos por Categoría</Text>
+        <Text style={styles.sectionTitle}>{t('home.expensesByCategory')}</Text>
         <TouchableOpacity onPress={() => navigation.navigate('ExpensesByCategory')}>
-          <Text style={styles.seeAllText}>Ver más</Text>
+          <Text style={styles.seeAllText}>{t('common.seeMore')}</Text>
         </TouchableOpacity>
       </View>
       
       {isLoadingCategories ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color={colors.primary} />
-          <Text style={styles.loadingText}>Cargando categorías...</Text>
+          <Text style={styles.loadingText}>{t('loading.categories')}</Text>
         </View>
       ) : categorizedExpenses.length === 0 ? (
         <View style={styles.emptyCategories}>
           <Ionicons name="pie-chart-outline" size={48} color={colors.textLight} />
-          <Text style={styles.emptyCategoriesText}>No hay gastos por categoría aún</Text>
+          <Text style={styles.emptyCategoriesText}>{t('home.noExpenseCategories')}</Text>
           <Text style={styles.emptyCategoriesSubtext}>
-            Realiza algunas transacciones para ver tu análisis de gastos
+            {t('home.makeTransactionsToSeeAnalysis')}
           </Text>
         </View>
       ) : (
@@ -703,7 +708,7 @@ const HomeScreen = () => {
             <Text style={styles.expensesSummaryAmount}>
               {formatCurrency(totalExpenses)}
             </Text>
-            <Text style={styles.expensesSummaryLabel}>gastados este mes</Text>
+            <Text style={styles.expensesSummaryLabel}>{t('home.spentThisMonth')}</Text>
           </View>
           
           {/* Lista de categorías */}
@@ -720,7 +725,7 @@ const HomeScreen = () => {
                 <View style={styles.categoryInfo}>
                   <Text style={styles.categoryName}>{category.name}</Text>
                   <Text style={styles.categoryCount}>
-                    {category.count} transacción{category.count !== 1 ? 'es' : ''}
+                    {t('home.transactionCount', { count: category.count })}
                   </Text>
                 </View>
               </View>
@@ -754,7 +759,7 @@ const HomeScreen = () => {
           >
             <Ionicons name="close" size={24} color={colors.text} />
           </TouchableOpacity>
-          <Text style={styles.modalTitle}>Nueva Transferencia</Text>
+          <Text style={styles.modalTitle}>{t('home.newTransfer')}</Text>
           <View style={{ width: 24 }} />
         </View>
         

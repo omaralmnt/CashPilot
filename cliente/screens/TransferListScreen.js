@@ -17,6 +17,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -29,6 +30,7 @@ const TransferListScreen = () => {
   const navigation = useNavigation();
   const { colors, isDark } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { t } = useTranslation();
   
   const [transfers, setTransfers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -99,7 +101,7 @@ const TransferListScreen = () => {
       }
     } catch (error) {
       console.error('Error loading user data:', error);
-      Alert.alert('Error', 'No se pudo cargar la información del usuario');
+      Alert.alert(t('common.error'), t('transfers.errors.loadUserData'));
     }
   };
 
@@ -179,7 +181,7 @@ const TransferListScreen = () => {
       }
     } catch (error) {
       console.error('Error loading transfers:', error);
-      Alert.alert('Error', 'No se pudieron cargar las transferencias: ' + error.message);
+      Alert.alert(t('common.error'), t('transfers.errors.loadTransfers', { error: error.message }));
       // Usar datos de ejemplo en caso de error
       setTransfers(getSampleTransfers());
     } finally {
@@ -261,17 +263,17 @@ const TransferListScreen = () => {
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) {
-      return `Hoy ${date.toLocaleTimeString('es-MX', { 
+      return `${t('transfers.time.today')} ${date.toLocaleTimeString('es-MX', { 
         hour: '2-digit', 
         minute: '2-digit' 
       })}`;
     } else if (diffDays === 1) {
-      return `Ayer ${date.toLocaleTimeString('es-MX', { 
+      return `${t('transfers.time.yesterday')} ${date.toLocaleTimeString('es-MX', { 
         hour: '2-digit', 
         minute: '2-digit' 
       })}`;
     } else if (diffDays < 7) {
-      return `${diffDays} días`;
+      return t('transfers.time.daysAgo', { days: diffDays });
     } else {
       return date.toLocaleDateString('es-MX', {
         day: '2-digit',
@@ -445,36 +447,36 @@ const TransferListScreen = () => {
 
   const handleTransferPress = (transfer) => {
     const transferType = getTransferType(transfer);
-    let message = `Monto: ${formatCurrency(transfer.monto)}\n`;
+    let message = `${t('transfers.detail.amount')}: ${formatCurrency(transfer.monto)}\n`;
     
     if (transferType === 'internal') {
-      message += `De: ${transfer.cuenta_origen.descripcion || transfer.cuenta_origen.nombre_banco}\n`;
-      message += `Para: ${transfer.cuenta_destino.descripcion || transfer.cuenta_destino.nombre_banco}\n`;
+      message += `${t('transfers.detail.from')}: ${transfer.cuenta_origen.descripcion || transfer.cuenta_origen.nombre_banco}\n`;
+      message += `${t('transfers.detail.to')}: ${transfer.cuenta_destino.descripcion || transfer.cuenta_destino.nombre_banco}\n`;
     } else if (transferType === 'sent') {
-      message += `De: ${transfer.cuenta_origen.descripcion || transfer.cuenta_origen.nombre_banco}\n`;
-      message += `Para: ${transfer.nombre_destinatario}\n`;
+      message += `${t('transfers.detail.from')}: ${transfer.cuenta_origen.descripcion || transfer.cuenta_origen.nombre_banco}\n`;
+      message += `${t('transfers.detail.to')}: ${transfer.nombre_destinatario}\n`;
     } else { // received
-      message += `De: ${transfer.nombre_destinatario || 'Externo'}\n`;
-      message += `Para: ${transfer.cuenta_destino.descripcion || transfer.cuenta_destino.nombre_banco}\n`;
+      message += `${t('transfers.detail.from')}: ${transfer.nombre_destinatario || t('transfers.detail.external')}\n`;
+      message += `${t('transfers.detail.to')}: ${transfer.cuenta_destino.descripcion || transfer.cuenta_destino.nombre_banco}\n`;
     }
     
-    message += `Fecha: ${formatDate(transfer.fecha_transferencia)}\n`;
+    message += `${t('transfers.detail.date')}: ${formatDate(transfer.fecha_transferencia)}\n`;
     
     if (transfer.concepto) {
-      message += `Concepto: ${transfer.concepto}\n`;
+      message += `${t('transfers.detail.concept')}: ${transfer.concepto}\n`;
     }
     
     if (transfer.comision > 0) {
-      message += `Comisión: ${formatCurrency(transfer.comision)}\n`;
+      message += `${t('transfers.detail.commission')}: ${formatCurrency(transfer.comision)}\n`;
     }
     
     if (transfer.categoria_descripcion) {
-      message += `Categoría: ${transfer.categoria_descripcion}\n`;
+      message += `${t('transfers.detail.category')}: ${transfer.categoria_descripcion}\n`;
     }
 
-    message += `Estado: ${transfer.estado}`;
+    message += `${t('transfers.detail.status')}: ${transfer.estado}`;
 
-    Alert.alert('Detalle de Transferencia', message, [{ text: 'OK' }]);
+    Alert.alert(t('transfers.detail.title'), message, [{ text: t('common.ok') }]);
   };
 
   const handleNewTransfer = () => {
@@ -490,7 +492,7 @@ const TransferListScreen = () => {
         <Ionicons name="arrow-back" size={24} color={colors.text} />
       </TouchableOpacity>
       
-      <Text style={styles.headerTitle}>Transferencias</Text>
+      <Text style={styles.headerTitle}>{t('transfers.title')}</Text>
       
       <View style={styles.headerActions}>
         <TouchableOpacity 
@@ -516,7 +518,7 @@ const TransferListScreen = () => {
         <Ionicons name="search" size={20} color={colors.textLight} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Buscar por concepto, destinatario, banco..."
+          placeholder={t('transfers.search.placeholder')}
           placeholderTextColor={colors.textLight}
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -538,7 +540,7 @@ const TransferListScreen = () => {
           onPress={() => setFilterType('all')}
         >
           <Text style={[styles.filterTabText, filterType === 'all' && styles.filterTabTextActive]}>
-            Todas
+            {t('transfers.filters.all')}
           </Text>
         </TouchableOpacity>
         
@@ -547,7 +549,7 @@ const TransferListScreen = () => {
           onPress={() => setFilterType('sent')}
         >
           <Text style={[styles.filterTabText, filterType === 'sent' && styles.filterTabTextActive]}>
-            Enviadas
+            {t('transfers.filters.sent')}
           </Text>
         </TouchableOpacity>
         
@@ -556,7 +558,7 @@ const TransferListScreen = () => {
           onPress={() => setFilterType('received')}
         >
           <Text style={[styles.filterTabText, filterType === 'received' && styles.filterTabTextActive]}>
-            Recibidas
+            {t('transfers.filters.received')}
           </Text>
         </TouchableOpacity>
 
@@ -565,7 +567,7 @@ const TransferListScreen = () => {
           onPress={() => setFilterType('internal')}
         >
           <Text style={[styles.filterTabText, filterType === 'internal' && styles.filterTabTextActive]}>
-            Internas
+            {t('transfers.filters.internal')}
           </Text>
         </TouchableOpacity>
       </ScrollView>
@@ -581,14 +583,14 @@ const TransferListScreen = () => {
           
           {/* Filtros de fecha */}
           <View style={styles.filterSection}>
-            <Text style={styles.filterSectionTitle}>Fecha</Text>
+            <Text style={styles.filterSectionTitle}>{t('transfers.advancedFilters.date.title')}</Text>
             <View style={styles.filterOptions}>
               {[
-                { key: 'all', label: 'Todas' },
-                { key: 'today', label: 'Hoy' },
-                { key: 'week', label: 'Última semana' },
-                { key: 'month', label: 'Último mes' },
-                { key: 'custom', label: 'Personalizado' }
+                { key: 'all', label: t('transfers.advancedFilters.date.all') },
+                { key: 'today', label: t('transfers.advancedFilters.date.today') },
+                { key: 'week', label: t('transfers.advancedFilters.date.lastWeek') },
+                { key: 'month', label: t('transfers.advancedFilters.date.lastMonth') },
+                { key: 'custom', label: t('transfers.advancedFilters.date.custom') }
               ].map(option => (
                 <TouchableOpacity
                   key={option.key}
@@ -605,14 +607,14 @@ const TransferListScreen = () => {
 
           {/* Filtros de monto */}
           <View style={styles.filterSection}>
-            <Text style={styles.filterSectionTitle}>Monto</Text>
+            <Text style={styles.filterSectionTitle}>{t('transfers.advancedFilters.amount.title')}</Text>
             <View style={styles.filterOptions}>
               {[
-                { key: 'all', label: 'Todos' },
-                { key: 'low', label: 'Menos de $500' },
-                { key: 'medium', label: '$500 - $2,000' },
-                { key: 'high', label: 'Más de $2,000' },
-                { key: 'custom', label: 'Personalizado' }
+                { key: 'all', label: t('transfers.advancedFilters.amount.all') },
+                { key: 'low', label: t('transfers.advancedFilters.amount.low') },
+                { key: 'medium', label: t('transfers.advancedFilters.amount.medium') },
+                { key: 'high', label: t('transfers.advancedFilters.amount.high') },
+                { key: 'custom', label: t('transfers.advancedFilters.amount.custom') }
               ].map(option => (
                 <TouchableOpacity
                   key={option.key}
@@ -629,13 +631,13 @@ const TransferListScreen = () => {
 
           {/* Filtros de estado */}
           <View style={styles.filterSection}>
-            <Text style={styles.filterSectionTitle}>Estado</Text>
+            <Text style={styles.filterSectionTitle}>{t('transfers.advancedFilters.status.title')}</Text>
             <View style={styles.filterOptions}>
               {[
-                { key: 'all', label: 'Todos' },
-                { key: 'completada', label: 'Completada' },
-                { key: 'pendiente', label: 'Pendiente' },
-                { key: 'fallida', label: 'Fallida' }
+                { key: 'all', label: t('transfers.advancedFilters.status.all') },
+                { key: 'completada', label: t('transfers.advancedFilters.status.completed') },
+                { key: 'pendiente', label: t('transfers.advancedFilters.status.pending') },
+                { key: 'fallida', label: t('transfers.advancedFilters.status.failed') }
               ].map(option => (
                 <TouchableOpacity
                   key={option.key}
@@ -653,14 +655,14 @@ const TransferListScreen = () => {
           {/* Filtro por banco */}
           {getUniqueBanks().length > 0 && (
             <View style={styles.filterSection}>
-              <Text style={styles.filterSectionTitle}>Banco</Text>
+              <Text style={styles.filterSectionTitle}>{t('transfers.advancedFilters.bank.title')}</Text>
               <View style={styles.filterOptions}>
                 <TouchableOpacity
                   style={[styles.filterOption, bankFilter === 'all' && styles.filterOptionActive]}
                   onPress={() => setBankFilter('all')}
                 >
                   <Text style={[styles.filterOptionText, bankFilter === 'all' && styles.filterOptionTextActive]}>
-                    Todos los bancos
+                    {t('transfers.advancedFilters.bank.all')}
                   </Text>
                 </TouchableOpacity>
                 {getUniqueBanks().map(bank => (
@@ -680,13 +682,13 @@ const TransferListScreen = () => {
 
           {/* Ordenamiento */}
           <View style={styles.filterSection}>
-            <Text style={styles.filterSectionTitle}>Ordenar por</Text>
+            <Text style={styles.filterSectionTitle}>{t('transfers.advancedFilters.sort.title')}</Text>
             <View style={styles.filterOptions}>
               {[
-                { key: 'newest', label: 'Más recientes' },
-                { key: 'oldest', label: 'Más antiguas' },
-                { key: 'amount_desc', label: 'Mayor monto' },
-                { key: 'amount_asc', label: 'Menor monto' }
+                { key: 'newest', label: t('transfers.advancedFilters.sort.newest') },
+                { key: 'oldest', label: t('transfers.advancedFilters.sort.oldest') },
+                { key: 'amount_desc', label: t('transfers.advancedFilters.sort.highestAmount') },
+                { key: 'amount_asc', label: t('transfers.advancedFilters.sort.lowestAmount') }
               ].map(option => (
                 <TouchableOpacity
                   key={option.key}
@@ -704,11 +706,11 @@ const TransferListScreen = () => {
           {/* Botones de acción */}
           <View style={styles.filterActions}>
             <TouchableOpacity style={styles.clearFiltersButton} onPress={clearAllFilters}>
-              <Text style={styles.clearFiltersText}>Limpiar filtros</Text>
+              <Text style={styles.clearFiltersText}>{t('transfers.advancedFilters.clearFilters')}</Text>
             </TouchableOpacity>
             
             <TouchableOpacity style={styles.applyFiltersButton} onPress={() => setShowFilters(false)}>
-              <Text style={styles.applyFiltersText}>Aplicar</Text>
+              <Text style={styles.applyFiltersText}>{t('transfers.advancedFilters.applyFilters')}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -727,7 +729,7 @@ const TransferListScreen = () => {
     switch (transferType) {
       case 'sent':
         displayInfo = {
-          title: `Enviado a ${transfer.nombre_destinatario}`,
+          title: t('transfers.item.sentTo', { recipient: transfer.nombre_destinatario }),
           subtitle: transfer.cuenta_origen.descripcion || transfer.cuenta_origen.nombre_banco,
           account: transfer.cuenta_origen
         };
@@ -736,7 +738,7 @@ const TransferListScreen = () => {
         break;
       case 'received':
         displayInfo = {
-          title: `Recibido de ${transfer.nombre_destinatario || 'Externo'}`,
+          title: t('transfers.item.receivedFrom', { sender: transfer.nombre_destinatario || t('transfers.detail.external') }),
           subtitle: transfer.cuenta_destino.descripcion || transfer.cuenta_destino.nombre_banco,
           account: transfer.cuenta_destino
         };
@@ -745,8 +747,11 @@ const TransferListScreen = () => {
         break;
       case 'internal':
         displayInfo = {
-          title: 'Transferencia interna',
-          subtitle: `${transfer.cuenta_origen.descripcion} → ${transfer.cuenta_destino.descripcion}`,
+          title: t('transfers.item.internalTransfer'),
+          subtitle: t('transfers.item.internalSubtitle', { 
+            from: transfer.cuenta_origen.descripcion, 
+            to: transfer.cuenta_destino.descripcion 
+          }),
           account: transfer.cuenta_destino
         };
         iconName = 'swap-horizontal';
@@ -754,8 +759,8 @@ const TransferListScreen = () => {
         break;
       default:
         displayInfo = {
-          title: 'Transferencia',
-          subtitle: 'Información no disponible',
+          title: t('transfers.item.transfer'),
+          subtitle: t('transfers.item.infoNotAvailable'),
           account: transfer.cuenta_origen || transfer.cuenta_destino
         };
         iconName = 'help';
@@ -812,11 +817,13 @@ const TransferListScreen = () => {
           </Text>
           {transfer.comision > 0 && (
             <Text style={styles.transferFee}>
-              Comisión: {formatCurrency(transfer.comision)}
+              {t('transfers.item.commission')}: {formatCurrency(transfer.comision)}
             </Text>
           )}
           <Text style={styles.transferStatus}>
-            {transfer.estado === 'completada' ? '✓ Completada' : transfer.estado}
+            {transfer.estado === 'completada' ? `✓ ${t('transfers.status.completed')}` : 
+             transfer.estado === 'pendiente' ? t('transfers.status.pending') :
+             transfer.estado === 'fallida' ? t('transfers.status.failed') : transfer.estado}
           </Text>
         </View>
       </TouchableOpacity>
@@ -826,22 +833,22 @@ const TransferListScreen = () => {
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <Ionicons name="swap-horizontal-outline" size={64} color={colors.textLight} />
-      <Text style={styles.emptyStateTitle}>No hay transferencias</Text>
+      <Text style={styles.emptyStateTitle}>{t('transfers.empty.title')}</Text>
       <Text style={styles.emptyStateSubtitle}>
         {searchQuery 
-          ? `No se encontraron resultados para "${searchQuery}"`
+          ? t('transfers.empty.searchResults', { query: searchQuery })
           : filterType === 'all' 
-          ? 'Aún no has realizado ninguna transferencia'
+          ? t('transfers.empty.noTransfers')
           : filterType === 'sent'
-          ? 'No has enviado transferencias'
+          ? t('transfers.empty.noSent')
           : filterType === 'received'
-          ? 'No has recibido transferencias'
-          : 'No tienes transferencias internas'
+          ? t('transfers.empty.noReceived')
+          : t('transfers.empty.noInternal')
         }
       </Text>
       {!searchQuery && (
         <TouchableOpacity style={styles.emptyStateButton} onPress={handleNewTransfer}>
-          <Text style={styles.emptyStateButtonText}>Realizar primera transferencia</Text>
+          <Text style={styles.emptyStateButtonText}>{t('transfers.empty.firstTransfer')}</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -856,11 +863,11 @@ const TransferListScreen = () => {
     return (
       <View style={styles.resultsInfo}>
         <Text style={styles.resultsInfoText}>
-          Mostrando {filteredCount} de {totalCount} transferencias
+          {t('transfers.results.showing', { filtered: filteredCount, total: totalCount })}
         </Text>
         {(searchQuery || dateFilter !== 'all' || amountFilter !== 'all' || statusFilter !== 'all' || bankFilter !== 'all') && (
           <TouchableOpacity onPress={clearAllFilters}>
-            <Text style={styles.clearFiltersLink}>Limpiar filtros</Text>
+            <Text style={styles.clearFiltersLink}>{t('transfers.results.clearFilters')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -882,7 +889,7 @@ const TransferListScreen = () => {
           >
             <Ionicons name="close" size={24} color={colors.text} />
           </TouchableOpacity>
-          <Text style={styles.modalTitle}>Nueva Transferencia</Text>
+          <Text style={styles.modalTitle}>{t('transfers.newTransfer.title')}</Text>
           <View style={{ width: 24 }} />
         </View>
         
@@ -902,7 +909,7 @@ const TransferListScreen = () => {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Cargando transferencias...</Text>
+        <Text style={styles.loadingText}>{t('transfers.loading.transfers')}</Text>
       </View>
     );
   }

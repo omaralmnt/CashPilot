@@ -16,6 +16,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -23,6 +24,7 @@ const TransferScreen = () => {
   const navigation = useNavigation();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { t } = useTranslation();
   
   // Estados principales
   const [transactionType, setTransactionType] = useState('transfer');
@@ -46,9 +48,9 @@ const TransferScreen = () => {
   const API_BASE_URL = Constants.expoConfig?.extra?.API_URL;
 
   const transactionTypes = [
-    { id: 'transfer', title: 'Transferencia', subtitle: 'Entre mis cuentas', icon: 'swap-horizontal' },
-    { id: 'payment', title: 'Pago', subtitle: 'A tercero', icon: 'arrow-up-circle' },
-    { id: 'receive', title: 'Recibir', subtitle: 'Dinero', icon: 'arrow-down-circle' }
+    { id: 'transfer', title: t('transfer.types.transfer'), subtitle: t('transfer.types.transferSubtitle'), icon: 'swap-horizontal' },
+    { id: 'payment', title: t('transfer.types.payment'), subtitle: t('transfer.types.paymentSubtitle'), icon: 'arrow-up-circle' },
+    { id: 'receive', title: t('transfer.types.receive'), subtitle: t('transfer.types.receiveSubtitle'), icon: 'arrow-down-circle' }
   ];
 
   useEffect(() => {
@@ -70,16 +72,16 @@ const TransferScreen = () => {
   const loadUserData = async () => {
     try {
       const token = await AsyncStorage.getItem('userToken');
-      if (!token) throw new Error('No hay token');
+      if (!token) throw new Error(t('transfer.errors.noToken'));
       
       const decodedToken = decodeToken(token);
-      if (!decodedToken?.id_usuario) throw new Error('Token inválido');
+      if (!decodedToken?.id_usuario) throw new Error(t('transfer.errors.invalidToken'));
       
       setCurrentUser(decodedToken);
       await loadUserAccounts(decodedToken.id_usuario, token);
     } catch (error) {
       console.error('Error loading user data:', error);
-      Alert.alert('Error', 'No se pudo cargar la información del usuario');
+      Alert.alert(t('common.error'), t('transfer.errors.loadUserData'));
     }
   };
 
@@ -94,7 +96,7 @@ const TransferScreen = () => {
         const data = await response.json();
         setUserAccounts(data.cuentas || []);
       } else {
-        throw new Error('Error al cargar cuentas');
+        throw new Error(t('transfer.errors.loadAccounts'));
       }
     } catch (error) {
       console.error('Error loading accounts:', error);
@@ -107,7 +109,7 @@ const TransferScreen = () => {
   const loadCategories = async () => {
     try {
       const token = await AsyncStorage.getItem('userToken');
-            const decodedToken = decodeToken(token);
+      const decodedToken = decodeToken(token);
 
       const response = await fetch(`${API_BASE_URL}/api/transferencia/categorias/${decodedToken.id_usuario}`, {
         headers: { 'Authorization': `Bearer ${token}` },
@@ -132,7 +134,7 @@ const TransferScreen = () => {
 
   const validateTransaction = () => {
     if (!amount || parseFloat(amount) <= 0) {
-      Alert.alert('Error', 'Ingresa un monto válido');
+      Alert.alert(t('common.error'), t('transfer.errors.invalidAmount'));
       return false;
     }
 
@@ -143,7 +145,7 @@ const TransferScreen = () => {
     };
 
     if (!validations[transactionType]()) {
-      Alert.alert('Error', 'Completa todos los campos requeridos');
+      Alert.alert(t('common.error'), t('transfer.errors.completeFields'));
       return false;
     }
 
@@ -152,7 +154,7 @@ const TransferScreen = () => {
       const account = userAccounts.find(a => a.id_cuenta === fromAccount);
       const total = parseFloat(amount) + parseFloat(fee || 0);
       if (total > parseFloat(account?.saldo || 0)) {
-        Alert.alert('Error', 'Saldo insuficiente');
+        Alert.alert(t('common.error'), t('transfer.errors.insufficientFunds'));
         return false;
       }
     }
@@ -230,19 +232,22 @@ const TransferScreen = () => {
         result = JSON.parse(responseText);
       } catch (parseError) {
         console.error('JSON Parse Error:', parseError);
-        throw new Error(`El servidor devolvió una respuesta inválida. Status: ${response.status}. Respuesta: ${responseText.substring(0, 200)}...`);
+        throw new Error(t('transfer.errors.invalidResponse', { 
+          status: response.status, 
+          response: responseText.substring(0, 200) 
+        }));
       }
 
       if (response.ok) {
-        Alert.alert('Éxito', 'Transacción completada exitosamente', [
-          { text: 'OK', onPress: () => navigation.goBack() }
+        Alert.alert(t('common.success'), t('transfer.success.message'), [
+          { text: t('common.ok'), onPress: () => navigation.goBack() }
         ]);
       } else {
-        throw new Error(result.error || `Error del servidor: ${response.status}`);
+        throw new Error(result.error || t('transfer.errors.serverError', { status: response.status }));
       }
     } catch (error) {
       console.error('Transaction error:', error);
-      Alert.alert('Error', error.message || 'No se pudo completar la transacción');
+      Alert.alert(t('common.error'), error.message || t('transfer.errors.transactionFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -264,14 +269,14 @@ const TransferScreen = () => {
       <TouchableOpacity onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={24} color={colors.text} />
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>Nueva Transacción</Text>
+      <Text style={styles.headerTitle}>{t('transfer.newTransaction')}</Text>
       <View style={{ width: 24 }} />
     </View>
   );
 
   const renderTypeSelector = () => (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Tipo de Transacción</Text>
+      <Text style={styles.sectionTitle}>{t('transfer.transactionType')}</Text>
       <View style={styles.typeGrid}>
         {transactionTypes.map((type) => (
           <TouchableOpacity
@@ -308,7 +313,7 @@ const TransferScreen = () => {
         <Text style={styles.label}>{title} *</Text>
         <TouchableOpacity style={styles.selector} onPress={onPress}>
           <Text style={[styles.selectorText, !account && styles.placeholder]}>
-            {account ? `${account.descripcion} - ${formatCurrency(account.saldo)}` : 'Seleccionar cuenta'}
+            {account ? `${account.descripcion} - ${formatCurrency(account.saldo)}` : t('transfer.selectAccount')}
           </Text>
           <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
         </TouchableOpacity>
@@ -321,10 +326,10 @@ const TransferScreen = () => {
     const category = categories.find(c => c.id_categoria === selectedCategory);
     return (
       <View style={styles.formGroup}>
-        <Text style={styles.label}>Categoría *</Text>
+        <Text style={styles.label}>{t('transfer.category')} *</Text>
         <TouchableOpacity style={styles.selector} onPress={() => openModal('category')}>
           <Text style={[styles.selectorText, !category && styles.placeholder]}>
-            {category ? category.descripcion : 'Seleccionar categoría'}
+            {category ? category.descripcion : t('transfer.selectCategory')}
           </Text>
           <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
         </TouchableOpacity>
@@ -357,10 +362,10 @@ const TransferScreen = () => {
       options = userAccounts.filter(a => 
         type === 'toAccount' && transactionType === 'transfer' ? a.id_cuenta !== fromAccount : true
       );
-      title = type === 'fromAccount' ? 'Cuenta de Origen' : 'Cuenta de Destino';
+      title = type === 'fromAccount' ? t('transfer.originAccount') : t('transfer.destinationAccount');
     } else if (type === 'category') {
       options = categories;
-      title = 'Categoría';
+      title = t('transfer.category');
     }
 
     return (
@@ -402,7 +407,7 @@ const TransferScreen = () => {
     return (
       <View style={[styles.container, styles.centered]}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Cargando...</Text>
+        <Text style={styles.loadingText}>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -411,6 +416,7 @@ const TransferScreen = () => {
     <View style={styles.container}>
       <StatusBar barStyle={colors.statusBarStyle} backgroundColor={colors.background} />
       
+      {/* Header comentado como en tu original */}
       {/* {renderHeader()} */}
       
       <KeyboardAvoidingView 
@@ -422,21 +428,21 @@ const TransferScreen = () => {
           
           {/* Cuenta de origen */}
           {(transactionType === 'transfer' || transactionType === 'payment') && 
-            renderAccountSelector('Cuenta de Origen', fromAccount, () => openModal('fromAccount'))
+            renderAccountSelector(t('transfer.originAccount'), fromAccount, () => openModal('fromAccount'))
           }
           
           {/* Cuenta de destino */}
           {(transactionType === 'transfer' || transactionType === 'receive') && 
-            renderAccountSelector('Cuenta de Destino', toAccount, () => openModal('toAccount'))
+            renderAccountSelector(t('transfer.destinationAccount'), toAccount, () => openModal('toAccount'))
           }
           
           {/* Destinatario/Remitente */}
           {transactionType !== 'transfer' && 
             renderTextInput(
-              transactionType === 'payment' ? 'Destinatario' : 'Remitente',
+              transactionType === 'payment' ? t('transfer.recipient') : t('transfer.sender'),
               recipientName,
               setRecipientName,
-              'Nombre completo',
+              t('transfer.fullName'),
               'default',
               true
             )
@@ -446,15 +452,15 @@ const TransferScreen = () => {
           {renderCategorySelector()}
           
           {/* Monto */}
-          {renderTextInput('Monto', amount, setAmount, '0.00', 'decimal-pad', true)}
+          {renderTextInput(t('transfer.amount'), amount, setAmount, '0.00', 'decimal-pad', true)}
           
           {/* Comisión */}
           {(transactionType === 'transfer' || transactionType === 'payment') && 
-            renderTextInput('Comisión', fee, setFee, '0.00', 'decimal-pad')
+            renderTextInput(t('transfer.commission'), fee, setFee, '0.00', 'decimal-pad')
           }
           
           {/* Concepto */}
-          {renderTextInput('Concepto', description, setDescription, 'Descripción opcional')}
+          {renderTextInput(t('transfer.concept'), description, setDescription, t('transfer.optionalDescription'))}
         </ScrollView>
         
         <View style={styles.bottomContainer}>
@@ -465,9 +471,9 @@ const TransferScreen = () => {
           >
             {isLoading && <ActivityIndicator size="small" color="white" style={{ marginRight: 8 }} />}
             <Text style={styles.buttonText}>
-              {isLoading ? 'Procesando...' : 
-               transactionType === 'transfer' ? 'Transferir' :
-               transactionType === 'payment' ? 'Pagar' : 'Registrar'}
+              {isLoading ? t('transfer.processing') : 
+               transactionType === 'transfer' ? t('transfer.transferButton') :
+               transactionType === 'payment' ? t('transfer.payButton') : t('transfer.registerButton')}
             </Text>
           </TouchableOpacity>
         </View>

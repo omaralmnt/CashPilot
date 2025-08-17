@@ -28,7 +28,6 @@ const EditAccountScreen = () => {
   const { colors, isDark } = useTheme();
   const styles = useThemedStyles(createStyles);
   
-  const [accountType, setAccountType] = useState('');
   const [accountName, setAccountName] = useState('');
   const [initialBalance, setInitialBalance] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
@@ -36,7 +35,6 @@ const EditAccountScreen = () => {
   const [selectedTipoCuenta, setSelectedTipoCuenta] = useState(null);
   const [selectedColor, setSelectedColor] = useState(null);
   const [notes, setNotes] = useState('');
-  const [showTypeModal, setShowTypeModal] = useState(false);
   const [showBankModal, setShowBankModal] = useState(false);
   const [showTipoCuentaModal, setShowTipoCuentaModal] = useState(false);
   const [showColorModal, setShowColorModal] = useState(false);
@@ -50,45 +48,6 @@ const EditAccountScreen = () => {
 
   // ID del usuario autenticado desde AsyncStorage
   const [userId, setUserId] = useState(null);
-
-  // Tipos de cuenta disponibles (categorías principales)
-  const accountTypes = [
-    { 
-      type: 'bank', 
-      name: 'Cuenta Bancaria', 
-      icon: 'business', 
-      color: '#3498DB',
-      description: 'Cuenta de débito, ahorro o nómina'
-    },
-    { 
-      type: 'credit', 
-      name: 'Tarjeta de Crédito', 
-      icon: 'card', 
-      color: '#E74C3C',
-      description: 'Tarjeta de crédito o línea de crédito'
-    },
-    { 
-      type: 'cash', 
-      name: 'Efectivo', 
-      icon: 'cash', 
-      color: '#27AE60',
-      description: 'Dinero en efectivo y monedas'
-    },
-    { 
-      type: 'digital', 
-      name: 'Monedero Digital', 
-      icon: 'phone-portrait', 
-      color: '#9B59B6',
-      description: 'PayPal, Mercado Pago, etc.'
-    },
-    { 
-      type: 'investment', 
-      name: 'Inversiones', 
-      icon: 'trending-up', 
-      color: '#F39C12',
-      description: 'Acciones, fondos, criptomonedas'
-    },
-  ];
 
   useEffect(() => {
     getUserIdAndLoadData();
@@ -146,9 +105,6 @@ const EditAccountScreen = () => {
     setInitialBalance(account.balance?.toString() || '0');
     setAccountNumber(account.accountNumber || '');
     setNotes(account.note || '');
-    
-    // Determinar el tipo de cuenta basado en el tipo que viene del WalletsScreen
-    setAccountType(account.type || 'bank');
   };
 
   const fetchBancos = async () => {
@@ -231,27 +187,18 @@ const EditAccountScreen = () => {
     setInitialBalance(formatted);
   };
 
-  const getSelectedAccountType = () => {
-    return accountTypes.find(type => type.type === accountType);
-  };
-
   const validateForm = () => {
-    if (!accountType) {
-      Alert.alert('Error', 'Por favor selecciona un tipo de cuenta');
-      return false;
-    }
-
     if (!accountName.trim()) {
       Alert.alert('Error', 'Por favor ingresa un nombre para la cuenta');
       return false;
     }
 
     if (!selectedTipoCuenta) {
-      Alert.alert('Error', 'Por favor selecciona el tipo específico de cuenta');
+      Alert.alert('Error', 'Por favor selecciona el tipo de cuenta');
       return false;
     }
 
-    if (accountType === 'bank' && !selectedBank) {
+    if (!selectedBank) {
       Alert.alert('Error', 'Por favor selecciona el banco');
       return false;
     }
@@ -284,7 +231,7 @@ const EditAccountScreen = () => {
         numero: accountNumber.trim() || null,
         saldo: parseFloat(initialBalance) || 0,
         nota: notes.trim() || null,
-        id_banco: selectedBank?.id_banco || 1, // Default banco si no aplica
+        id_banco: selectedBank.id_banco,
         id_tipo_cuenta: selectedTipoCuenta.id_tipo_cuenta,
         id_color: selectedColor.id_color,
         id_usuario: userId
@@ -491,35 +438,6 @@ const EditAccountScreen = () => {
     </View>
   );
 
-  const renderAccountTypeSelector = () => (
-    <View style={styles.formGroup}>
-      <Text style={styles.inputLabel}>Categoría de Cuenta *</Text>
-      <TouchableOpacity
-        style={styles.selector}
-        onPress={() => setShowTypeModal(true)}
-      >
-        {accountType ? (
-          <View style={styles.selectedContainer}>
-            <View style={[styles.typeIcon, { backgroundColor: getSelectedAccountType()?.color + '20' }]}>
-              <Ionicons
-                name={getSelectedAccountType()?.icon}
-                size={20}
-                color={getSelectedAccountType()?.color}
-              />
-            </View>
-            <View style={styles.selectedTextContainer}>
-              <Text style={styles.selectedText}>{getSelectedAccountType()?.name}</Text>
-              <Text style={styles.selectedDescription}>{getSelectedAccountType()?.description}</Text>
-            </View>
-          </View>
-        ) : (
-          <Text style={styles.selectorPlaceholder}>Seleccionar categoría</Text>
-        )}
-        <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
-      </TouchableOpacity>
-    </View>
-  );
-
   const renderTipoCuentaSelector = () => (
     <View style={styles.formGroup}>
       <Text style={styles.inputLabel}>Tipo de Cuenta *</Text>
@@ -528,7 +446,7 @@ const EditAccountScreen = () => {
         onPress={() => setShowTipoCuentaModal(true)}
       >
         <Text style={selectedTipoCuenta ? styles.selectedText : styles.selectorPlaceholder}>
-          {selectedTipoCuenta?.descripcion || 'Seleccionar tipo específico'}
+          {selectedTipoCuenta?.descripcion || 'Seleccionar tipo de cuenta'}
         </Text>
         <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
       </TouchableOpacity>
@@ -549,39 +467,27 @@ const EditAccountScreen = () => {
         />
       </View>
 
-      {accountType === 'bank' && (
-        <View style={styles.formGroup}>
-          <Text style={styles.inputLabel}>Banco *</Text>
-          <TouchableOpacity
-            style={styles.selector}
-            onPress={() => setShowBankModal(true)}
-          >
-            <Text style={selectedBank ? styles.selectedText : styles.selectorPlaceholder}>
-              {selectedBank?.descripcion || 'Seleccionar banco'}
-            </Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
-          </TouchableOpacity>
-        </View>
-      )}
+      <View style={styles.formGroup}>
+        <Text style={styles.inputLabel}>Banco *</Text>
+        <TouchableOpacity
+          style={styles.selector}
+          onPress={() => setShowBankModal(true)}
+        >
+          <Text style={selectedBank ? styles.selectedText : styles.selectorPlaceholder}>
+            {selectedBank?.descripcion || 'Seleccionar banco'}
+          </Text>
+          <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.formGroup}>
-        <Text style={styles.inputLabel}>
-          {accountType === 'digital' ? 'Email/Usuario' : 'Número de Cuenta'}
-        </Text>
+        <Text style={styles.inputLabel}>Número de Cuenta</Text>
         <TextInput
           style={styles.textInput}
           value={accountNumber}
           onChangeText={setAccountNumber}
-          placeholder={
-            accountType === 'digital' 
-              ? "usuario@email.com" 
-              : accountType === 'cash' 
-                ? "No aplica" 
-                : "****1234"
-          }
+          placeholder="****1234"
           placeholderTextColor={colors.textLight}
-          keyboardType={accountType === 'digital' ? 'email-address' : 'default'}
-          editable={accountType !== 'cash'}
         />
       </View>
     </>
@@ -646,52 +552,6 @@ const EditAccountScreen = () => {
         maxLength={200}
       />
     </View>
-  );
-
-  // Modales (reutilizando los mismos del AddWalletScreen)
-  const renderTypeModal = () => (
-    <Modal visible={showTypeModal} transparent animationType="slide">
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Categoría de Cuenta</Text>
-            <TouchableOpacity onPress={() => setShowTypeModal(false)}>
-              <Ionicons name="close" size={24} color={colors.text} />
-            </TouchableOpacity>
-          </View>
-          
-          <ScrollView style={styles.modalList}>
-            {accountTypes.map((type) => (
-              <TouchableOpacity
-                key={type.type}
-                style={styles.modalOption}
-                onPress={() => {
-                  setAccountType(type.type);
-                  setShowTypeModal(false);
-                  // Reset dependent fields only if changing type
-                  if (accountType !== type.type) {
-                    setSelectedBank(null);
-                    setSelectedTipoCuenta(null);
-                    setAccountNumber('');
-                  }
-                }}
-              >
-                <View style={[styles.typeIcon, { backgroundColor: type.color + '20' }]}>
-                  <Ionicons name={type.icon} size={24} color={type.color} />
-                </View>
-                <View style={styles.optionTextContainer}>
-                  <Text style={styles.optionTitle}>{type.name}</Text>
-                  <Text style={styles.optionDescription}>{type.description}</Text>
-                </View>
-                {accountType === type.type && (
-                  <Ionicons name="checkmark" size={20} color={colors.success} />
-                )}
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      </View>
-    </Modal>
   );
 
   const renderTipoCuentaModal = () => (
@@ -830,21 +690,14 @@ const EditAccountScreen = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {renderAccountTypeSelector()}
-          
-          {accountType && (
-            <>
-              {renderTipoCuentaSelector()}
-              {renderBasicInfo()}
-              {renderAmountInputs()}
-              {renderColorSelector()}
-              {renderNotes()}
-            </>
-          )}
+          {renderTipoCuentaSelector()}
+          {renderBasicInfo()}
+          {renderAmountInputs()}
+          {renderColorSelector()}
+          {renderNotes()}
         </ScrollView>
       </KeyboardAvoidingView>
       
-      {renderTypeModal()}
       {renderTipoCuentaModal()}
       {renderBankModal()}
       {renderColorModal()}
@@ -949,31 +802,11 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     fontSize: 16,
     color: colors.textLight,
   },
-  selectedContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  selectedTextContainer: {
-    flex: 1,
-    marginLeft: 12,
-  },
   selectedText: {
+    flex: 1,
     fontSize: 16,
     color: colors.text,
     fontWeight: '500',
-  },
-  selectedDescription: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  typeIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   amountInputContainer: {
     flexDirection: 'row',
@@ -1056,20 +889,6 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: colors.separator,
-  },
-  optionTextContainer: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  optionTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.text,
-  },
-  optionDescription: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 2,
   },
   bankOptionText: {
     flex: 1,

@@ -10,9 +10,11 @@ import {
   Platform,
   Appearance,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTranslation } from 'react-i18next';
 import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
 import EditProfileModal from './EditProfileModal';
 
@@ -22,7 +24,12 @@ const ProfileScreen = ({ navigation }) => {
   const [userUsername, setUserUsername] = useState('');
   const [userId, setUserId] = useState('');
   const [showThemeModal, setShowThemeModal] = useState(false);
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [isChangingLanguage, setIsChangingLanguage] = useState(false); // Nuevo estado
+  
+  // Hook de traducción
+  const { t, i18n } = useTranslation();
   
   // Usar el contexto de tema
   const {
@@ -50,28 +57,28 @@ const ProfileScreen = ({ navigation }) => {
       if (token) {
         // Decodificar el JWT para obtener la información del usuario
         const payload = JSON.parse(atob(token.split('.')[1]));
-        setUserName(payload.nombre || 'Usuario');
+        setUserName(payload.nombre || t('profile.defaultUser'));
         setUserEmail(payload.correo || '');
         setUserUsername(payload.username || '');
         setUserId(payload.id_usuario || '');
       }
     } catch (error) {
       console.log('❌ Error loading user info:', error);
-      setUserName('Usuario');
+      setUserName(t('profile.defaultUser'));
     }
   };
 
   const handleLogout = () => {
     Alert.alert(
-      'Cerrar Sesión',
-      '¿Estás seguro de que quieres cerrar sesión?',
+      t('profile.logout'),
+      t('profile.logoutConfirm'),
       [
         {
-          text: 'Cancelar',
+          text: t('common.cancel'),
           style: 'cancel'
         },
         {
-          text: 'Cerrar Sesión',
+          text: t('profile.logout'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -104,6 +111,62 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
+  // SOLUCIÓN PRINCIPAL: Cambio de idioma optimizado
+  const changeLanguage = async (language) => {
+    if (isChangingLanguage) return; // Prevenir múltiples ejecuciones
+    
+    try {
+      setIsChangingLanguage(true);
+      
+      // Cerrar el modal inmediatamente para una mejor UX
+      setShowLanguageModal(false);
+      
+      // Usar setTimeout para permitir que la UI se actualice
+      setTimeout(async () => {
+        try {
+          console.log('🌐 Cambiando idioma a:', language);
+          
+          // Cambiar idioma
+          await i18n.changeLanguage(language);
+          
+          // Guardar preferencia
+          await AsyncStorage.setItem('selectedLanguage', language);
+          
+          console.log('✅ Idioma cambiado exitosamente');
+          
+          // Pequeña pausa adicional para asegurar que el cambio se procese
+          setTimeout(() => {
+            setIsChangingLanguage(false);
+          }, 300);
+          
+        } catch (error) {
+          console.log('❌ Error cambiando idioma:', error);
+          setIsChangingLanguage(false);
+        }
+      }, 100);
+      
+    } catch (error) {
+      console.log('❌ Error en changeLanguage:', error);
+      setIsChangingLanguage(false);
+    }
+  };
+
+  const getLanguageDisplayName = (code) => {
+    const languages = {
+      es: 'Español',
+      en: 'English'
+    };
+    return languages[code] || code;
+  };
+
+  const getLanguageFlag = (code) => {
+    const flags = {
+      es: '🇪🇸',
+      en: '🇺🇸'
+    };
+    return flags[code] || '🌐';
+  };
+
   const getInitials = (name) => {
     return name
       .split(' ')
@@ -123,7 +186,7 @@ const ProfileScreen = ({ navigation }) => {
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Seleccionar Tema</Text>
+            <Text style={styles.modalTitle}>{t('profile.selectTheme')}</Text>
             <TouchableOpacity 
               onPress={() => setShowThemeModal(false)}
               style={styles.closeButton}
@@ -155,12 +218,10 @@ const ProfileScreen = ({ navigation }) => {
                     styles.themeOptionTitle,
                     themeMode === theme && styles.selectedThemeText
                   ]}>
-                    Modo {getThemeDisplayName(theme)}
+                    {t(`profile.theme.${theme}`)}
                   </Text>
                   <Text style={styles.themeOptionDescription}>
-                    {theme === 'light' && 'Interfaz clara para mejor visibilidad diurna'}
-                    {theme === 'dark' && 'Interfaz oscura para reducir fatiga visual'}
-                    {theme === 'system' && 'Sigue la configuración del sistema automáticamente'}
+                    {t(`profile.themeDescription.${theme}`)}
                   </Text>
                 </View>
               </View>
@@ -195,6 +256,81 @@ const ProfileScreen = ({ navigation }) => {
     </Modal>
   );
 
+  // Modal de idioma mejorado con loading state
+  const LanguageModal = () => (
+    <Modal
+      visible={showLanguageModal}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={() => !isChangingLanguage && setShowLanguageModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>{t('profile.selectLanguage')}</Text>
+            <TouchableOpacity 
+              onPress={() => !isChangingLanguage && setShowLanguageModal(false)}
+              style={[styles.closeButton, isChangingLanguage && { opacity: 0.5 }]}
+              disabled={isChangingLanguage}
+            >
+              <Ionicons name="close" size={24} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+          
+          {isChangingLanguage && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={styles.loadingText}>Cambiando idioma...</Text>
+            </View>
+          )}
+          
+          {['es', 'en'].map((language) => (
+            <TouchableOpacity
+              key={language}
+              style={[
+                styles.themeOption,
+                i18n.language === language && styles.selectedThemeOption,
+                isChangingLanguage && { opacity: 0.5 }
+              ]}
+              onPress={() => !isChangingLanguage && changeLanguage(language)}
+              disabled={isChangingLanguage}
+            >
+              <View style={styles.themeOptionLeft}>
+                <Text style={styles.languageFlag}>{getLanguageFlag(language)}</Text>
+                <View style={styles.themeOptionText}>
+                  <Text style={[
+                    styles.themeOptionTitle,
+                    i18n.language === language && styles.selectedThemeText
+                  ]}>
+                    {getLanguageDisplayName(language)}
+                  </Text>
+                  <Text style={styles.themeOptionDescription}>
+                    {language === 'es' ? 'Idioma español' : 'English language'}
+                  </Text>
+                </View>
+              </View>
+              {i18n.language === language && (
+                <Ionicons name="checkmark" size={20} color={colors.primary} />
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    </Modal>
+  );
+
+  // Overlay de carga cuando se está cambiando el idioma
+  const LoadingOverlay = () => (
+    isChangingLanguage && (
+      <View style={styles.loadingOverlay}>
+        <View style={styles.loadingCard}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingOverlayText}>Aplicando cambios...</Text>
+        </View>
+      </View>
+    )
+  );
+
   return (
     <View style={styles.container}>
       <StatusBar 
@@ -204,7 +340,7 @@ const ProfileScreen = ({ navigation }) => {
       
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Mi Perfil</Text>
+        <Text style={styles.headerTitle}>{t('profile.title')}</Text>
         {/* Indicador visual del tema actual (solo en desarrollo) */}
         {__DEV__ && (
           <Text style={styles.themeIndicator}>
@@ -219,6 +355,7 @@ const ProfileScreen = ({ navigation }) => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         bounces={true}
+        scrollEnabled={!isChangingLanguage} // Deshabilitar scroll durante cambio
       >
         {/* Profile Card */}
         <View style={styles.profileCard}>
@@ -232,33 +369,68 @@ const ProfileScreen = ({ navigation }) => {
             <TouchableOpacity 
               style={styles.editProfileButton}
               onPress={() => setShowEditModal(true)}
+              disabled={isChangingLanguage}
             >
               <Ionicons name="pencil" size={16} color="white" />
             </TouchableOpacity>
           </View>
           
           <Text style={styles.userName}>{userName}</Text>
-          {/* <Text style={styles.userSubtitle}>@{userUsername || 'usuario'}</Text> */}
           {userEmail ? (
             <Text style={styles.userEmail}>{userEmail}</Text>
           ) : null}
-          <Text style={styles.userInfo}>Gestiona tus finanzas de manera inteligente</Text>
+          <Text style={styles.userInfo}>{t('profile.subtitle')}</Text>
         </View>
 
         {/* Options Section */}
         <View style={styles.optionsSection}>
-          <Text style={styles.sectionTitle}>Configuración</Text>
+          <Text style={styles.sectionTitle}>{t('profile.settings')}</Text>
           
           {/* Edit Profile Option */}
           <TouchableOpacity 
-            style={styles.optionItem}
+            style={[styles.optionItem, isChangingLanguage && { opacity: 0.5 }]}
             onPress={() => setShowEditModal(true)}
+            disabled={isChangingLanguage}
           >
             <View style={styles.optionLeft}>
               <Ionicons name="person-outline" size={24} color={colors.primary} />
               <View style={styles.optionText}>
-                <Text style={styles.optionTitle}>Editar Perfil</Text>
-                <Text style={styles.optionSubtitle}>Cambiar información personal y contraseña</Text>
+                <Text style={styles.optionTitle}>{t('profile.editProfile')}</Text>
+                <Text style={styles.optionSubtitle}>{t('profile.editProfileDescription')}</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+          
+          {/* Categorías Personalizadas Option */}
+          <TouchableOpacity 
+            style={[styles.optionItem, isChangingLanguage && { opacity: 0.5 }]}
+            onPress={() => navigation.navigate('CategoriasPersonalizadas')}
+            disabled={isChangingLanguage}
+          >
+            <View style={styles.optionLeft}>
+              <Ionicons name="albums-outline" size={24} color={colors.primary} />
+              <View style={styles.optionText}>
+                <Text style={styles.optionTitle}>{t('profile.customCategories')}</Text>
+                <Text style={styles.optionSubtitle}>{t('profile.customCategoriesDescription')}</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+          
+          {/* Language Selection */}
+          <TouchableOpacity 
+            style={[styles.optionItem, isChangingLanguage && { opacity: 0.5 }]}
+            onPress={() => setShowLanguageModal(true)}
+            disabled={isChangingLanguage}
+          >
+            <View style={styles.optionLeft}>
+              <Ionicons name="language-outline" size={24} color={colors.primary} />
+              <View style={styles.optionText}>
+                <Text style={styles.optionTitle}>{t('profile.language')}</Text>
+                <Text style={styles.optionSubtitle}>
+                  {getLanguageDisplayName(i18n.language)} {getLanguageFlag(i18n.language)}
+                </Text>
               </View>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
@@ -266,8 +438,9 @@ const ProfileScreen = ({ navigation }) => {
           
           {/* Theme Selection */}
           <TouchableOpacity 
-            style={styles.optionItem}
+            style={[styles.optionItem, isChangingLanguage && { opacity: 0.5 }]}
             onPress={() => setShowThemeModal(true)}
+            disabled={isChangingLanguage}
           >
             <View style={styles.optionLeft}>
               <Ionicons 
@@ -276,10 +449,10 @@ const ProfileScreen = ({ navigation }) => {
                 color={colors.primary} 
               />
               <View style={styles.optionText}>
-                <Text style={styles.optionTitle}>Tema</Text>
+                <Text style={styles.optionTitle}>{t('profile.theme.title')}</Text>
                 <Text style={styles.optionSubtitle}>
-                  {getThemeDisplayName(themeMode)}
-                  {themeMode === 'system' && ` (${currentTheme === 'dark' ? 'Oscuro' : 'Claro'})`}
+                  {t(`profile.theme.${themeMode}`)}
+                  {themeMode === 'system' && ` (${currentTheme === 'dark' ? t('profile.theme.dark') : t('profile.theme.light')})`}
                 </Text>
               </View>
             </View>
@@ -291,50 +464,55 @@ const ProfileScreen = ({ navigation }) => {
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <Ionicons name="wallet-outline" size={24} color={colors.primary} />
-            <Text style={styles.statLabel}>Control Total</Text>
-            <Text style={styles.statDescription}>de tus finanzas</Text>
+            <Text style={styles.statLabel}>{t('profile.stats.totalControl')}</Text>
+            <Text style={styles.statDescription}>{t('profile.stats.finances')}</Text>
           </View>
           
           <View style={styles.statItem}>
             <Ionicons name="trending-up-outline" size={24} color={colors.success} />
-            <Text style={styles.statLabel}>Crecimiento</Text>
-            <Text style={styles.statDescription}>inteligente</Text>
+            <Text style={styles.statLabel}>{t('profile.stats.growth')}</Text>
+            <Text style={styles.statDescription}>{t('profile.stats.intelligent')}</Text>
           </View>
           
           <View style={styles.statItem}>
             <Ionicons name="shield-checkmark-outline" size={24} color={colors.info} />
-            <Text style={styles.statLabel}>Seguridad</Text>
-            <Text style={styles.statDescription}>garantizada</Text>
+            <Text style={styles.statLabel}>{t('profile.stats.security')}</Text>
+            <Text style={styles.statDescription}>{t('profile.stats.guaranteed')}</Text>
           </View>
         </View>
 
         {/* App Info */}
         <View style={styles.infoContainer}>
-          <Text style={styles.infoTitle}>CashPilot v2.1.0</Text>
+          <Text style={styles.infoTitle}>{t('profile.appInfo.title')}</Text>
           <Text style={styles.infoDescription}>
-            Tu piloto financiero personal que te ayuda a navegar hacia tus metas económicas
+            {t('profile.appInfo.description')}
           </Text>
         </View>
 
         {/* Logout Button */}
         <View style={styles.logoutContainer}>
           <TouchableOpacity 
-            style={styles.logoutButton}
+            style={[styles.logoutButton, isChangingLanguage && { opacity: 0.5 }]}
             onPress={handleLogout}
+            disabled={isChangingLanguage}
           >
             <Ionicons name="log-out-outline" size={20} color={colors.error} />
-            <Text style={styles.logoutText}>Cerrar Sesión</Text>
+            <Text style={styles.logoutText}>{t('profile.logout')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
 
       {/* Modals */}
       <ThemeModal />
+      <LanguageModal />
       <EditProfileModal 
         visible={showEditModal}
         onClose={() => setShowEditModal(false)}
         onSuccess={handleEditProfileSuccess}
       />
+      
+      {/* Loading Overlay */}
+      <LoadingOverlay />
     </View>
   );
 };
@@ -570,7 +748,7 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     fontWeight: '600',
     marginLeft: 8,
   },
-  // Modal styles para el ThemeModal
+  // Modal styles para el ThemeModal y LanguageModal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -634,6 +812,10 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 2,
   },
+  languageFlag: {
+    fontSize: 24,
+    marginRight: 0,
+  },
   debugInfo: {
     paddingHorizontal: 20,
     paddingTop: 15,
@@ -658,6 +840,50 @@ const createStyles = ({ colors, isDark }) => StyleSheet.create({
     color: colors.text,
     textAlign: 'center',
     fontWeight: '600',
+  },
+  // NUEVOS ESTILOS para loading states
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.separator,
+  },
+  loadingText: {
+    marginLeft: 10,
+    fontSize: 16,
+    color: colors.text,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  loadingCard: {
+    backgroundColor: colors.surface,
+    paddingVertical: 30,
+    paddingHorizontal: 40,
+    borderRadius: 15,
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  loadingOverlayText: {
+    marginTop: 15,
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    textAlign: 'center',
   },
 });
 

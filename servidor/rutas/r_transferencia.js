@@ -9,10 +9,10 @@ router.get('/usuario/:id_usuario', obtenerTransferenciasUsuario );
 router.get('/categorias/:id_usuario',obtenerCategorias)
 router.post('/pago-tercero',registrarPagoTercero)
 router.post('/recibir-dinero',registrarRecepcionDinero)
-router.get('/categorias-personalizadas',obtenerCategoriasPersonalizadas)
-router.post('/categorias-personalizadas',crearCategoriaPersonalizada)
-router.put('/categorias-personalizadas',actualizarCategoriaPersonalizada)
-router.delete('/categorias-personalizadas',eliminarCategoriaPersonalizada)
+router.get('/categorias-personalizadas/:id_usuario',obtenerCategoriasPersonalizadas)
+router.post('/categorias-personalizadas/:id_usuario',crearCategoriaPersonalizada)
+router.put('/categorias-personalizadas/:id_usuario',actualizarCategoriaPersonalizada)
+router.delete('/categorias-personalizadas/:id_usuario',eliminarCategoriaPersonalizada)
 
 
 module.exports = router;
