@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import Constants from 'expo-constants';
 
 const { width } = Dimensions.get('window');
@@ -25,6 +26,7 @@ const WalletsScreen = () => {
   const navigation = useNavigation();
   const { colors, isDark } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { t } = useTranslation();
   
   const [showAddModal, setShowAddModal] = useState(false);
   const [wallets, setWallets] = useState([]);
@@ -53,14 +55,14 @@ const WalletsScreen = () => {
           setUserId(userIdFromToken);
           await fetchWalletsForUser(userIdFromToken);
         } else {
-          Alert.alert('Error', 'No se pudo obtener la información del usuario del token');
+          Alert.alert(t('common.error'), t('wallets.errors.noUserInfo'));
         }
       } else {
-        Alert.alert('Error', 'Token de usuario no encontrado');
+        Alert.alert(t('common.error'), t('wallets.errors.noUserToken'));
       }
     } catch (error) {
       console.error('Error decoding JWT:', error);
-      Alert.alert('Error', 'Error al procesar el token de usuario');
+      Alert.alert(t('common.error'), t('wallets.errors.tokenProcessing'));
     } finally {
       setLoading(false);
     }
@@ -101,14 +103,14 @@ const WalletsScreen = () => {
         // No hay cuentas para este usuario
         setWallets([]);
       } else {
-        throw new Error('Error al cargar las cuentas');
+        throw new Error(t('wallets.errors.loadAccounts'));
       }
     } catch (error) {
       console.error('Error fetching wallets:', error);
       Alert.alert(
-        'Error',
-        'No se pudieron cargar las cuentas. Por favor, intenta de nuevo.',
-        [{ text: 'OK' }]
+        t('common.error'),
+        t('wallets.errors.loadAccountsMessage'),
+        [{ text: t('common.ok') }]
       );
     }
   };
@@ -165,12 +167,12 @@ const WalletsScreen = () => {
 
   const handleDeleteWallet = (walletId) => {
     Alert.alert(
-      'Eliminar Cuenta',
-      '¿Estás seguro de que deseas eliminar esta cuenta? Esta acción no se puede deshacer.',
+      t('wallets.delete.title'),
+      t('wallets.delete.message'),
       [
-        { text: 'Cancelar', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Eliminar',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: () => deleteWallet(walletId),
         },
@@ -181,7 +183,7 @@ const WalletsScreen = () => {
   const deleteWallet = async (walletId) => {
     try {
       if (!userId) {
-        Alert.alert('Error', 'No se pudo obtener la información del usuario');
+        Alert.alert(t('common.error'), t('wallets.errors.noUserInfo'));
         return;
       }
 
@@ -192,26 +194,34 @@ const WalletsScreen = () => {
       if (response.ok) {
         // Actualizar la lista local
         setWallets(wallets.filter(wallet => wallet.id !== walletId));
-        Alert.alert('Éxito', 'Cuenta eliminada correctamente');
+        Alert.alert(t('common.success'), t('wallets.delete.success'));
       } else {
-        throw new Error('Error al eliminar la cuenta');
+        throw new Error(t('wallets.errors.deleteAccount'));
       }
     } catch (error) {
       console.error('Error deleting wallet:', error);
       Alert.alert(
-        'Error',
-        'No se pudo eliminar la cuenta. Por favor, intenta de nuevo.'
+        t('common.error'),
+        t('wallets.errors.deleteAccountMessage')
       );
     }
   };
 
   const accountTypes = [
-    { type: 'bank', name: 'Cuenta Bancaria', icon: 'business', color: colors.info },
-    { type: 'credit', name: 'Tarjeta de Crédito', icon: 'card', color: colors.error },
-    { type: 'cash', name: 'Efectivo', icon: 'cash', color: colors.success },
-    { type: 'digital', name: 'Monedero Digital', icon: 'phone-portrait', color: colors.primary },
-    { type: 'investment', name: 'Inversiones', icon: 'trending-up', color: colors.warning },
+    { type: 'bank', name: t('wallets.accountTypes.bank'), icon: 'business', color: colors.info },
+    { type: 'credit', name: t('wallets.accountTypes.credit'), icon: 'card', color: colors.error },
+    { type: 'cash', name: t('wallets.accountTypes.cash'), icon: 'cash', color: colors.success },
+    { type: 'digital', name: t('wallets.accountTypes.digital'), icon: 'phone-portrait', color: colors.primary },
+    { type: 'investment', name: t('wallets.accountTypes.investment'), icon: 'trending-up', color: colors.warning },
   ];
+
+  const accountTypeDescriptions = {
+    bank: t('wallets.accountTypes.descriptions.bank'),
+    credit: t('wallets.accountTypes.descriptions.credit'),
+    cash: t('wallets.accountTypes.descriptions.cash'),
+    digital: t('wallets.accountTypes.descriptions.digital'),
+    investment: t('wallets.accountTypes.descriptions.investment'),
+  };
 
   const getTotalBalance = () => {
     return wallets.reduce((total, wallet) => {
@@ -254,7 +264,7 @@ const WalletsScreen = () => {
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <Text style={styles.headerTitle}>Mis Cuentas</Text>
+      <Text style={styles.headerTitle}>{t('wallets.title')}</Text>
       <TouchableOpacity 
         style={styles.addButton}
         onPress={() => navigation.navigate('AddWallet')}
@@ -270,7 +280,7 @@ const WalletsScreen = () => {
         <View style={styles.summaryIconContainer}>
           <Ionicons name="wallet" size={24} color={colors.info} />
         </View>
-        <Text style={styles.summaryLabel}>Patrimonio Total</Text>
+        <Text style={styles.summaryLabel}>{t('wallets.summary.totalAssets')}</Text>
         <Text style={[styles.summaryAmount, { color: getTotalBalance() >= 0 ? colors.success : colors.error }]}>
           {getTotalBalance() >= 0 ? '+' : ''}{formatCurrency(getTotalBalance())}
         </Text>
@@ -281,7 +291,7 @@ const WalletsScreen = () => {
           <View style={[styles.summaryIconContainer, { backgroundColor: colors.success + '20' }]}>
             <Ionicons name="trending-up" size={20} color={colors.success} />
           </View>
-          <Text style={styles.summaryLabelSmall}>Activos</Text>
+          <Text style={styles.summaryLabelSmall}>{t('wallets.summary.assets')}</Text>
           <Text style={[styles.summaryAmountSmall, { color: colors.success }]}>
             {formatCurrency(getTotalAssets())}
           </Text>
@@ -291,7 +301,7 @@ const WalletsScreen = () => {
           <View style={[styles.summaryIconContainer, { backgroundColor: colors.error + '20' }]}>
             <Ionicons name="trending-down" size={20} color={colors.error} />
           </View>
-          <Text style={styles.summaryLabelSmall}>Deudas</Text>
+          <Text style={styles.summaryLabelSmall}>{t('wallets.summary.debts')}</Text>
           <Text style={[styles.summaryAmountSmall, { color: colors.error }]}>
             {formatCurrency(getTotalDebt())}
           </Text>
@@ -339,7 +349,7 @@ const WalletsScreen = () => {
 
       <View style={styles.walletBalance}>
         <Text style={styles.balanceLabel}>
-          {wallet.type === 'credit' ? 'Saldo Disponible' : 'Saldo Actual'}
+          {wallet.type === 'credit' ? t('wallets.balance.available') : t('wallets.balance.current')}
         </Text>
         <Text style={[
           styles.balanceAmount,
@@ -370,13 +380,13 @@ const WalletsScreen = () => {
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Agregar Cuenta</Text>
+            <Text style={styles.modalTitle}>{t('wallets.addAccount.title')}</Text>
             <TouchableOpacity onPress={() => setShowAddModal(false)}>
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.modalSubtitle}>Selecciona el tipo de cuenta</Text>
+          <Text style={styles.modalSubtitle}>{t('wallets.addAccount.subtitle')}</Text>
 
           <ScrollView style={styles.accountTypesContainer}>
             {accountTypes.map((accountType) => (
@@ -398,11 +408,7 @@ const WalletsScreen = () => {
                 <View style={styles.accountTypeInfo}>
                   <Text style={styles.accountTypeName}>{accountType.name}</Text>
                   <Text style={styles.accountTypeDescription}>
-                    {accountType.type === 'bank' && 'Cuentas de ahorro, débito o nómina'}
-                    {accountType.type === 'credit' && 'Tarjetas de crédito y líneas de crédito'}
-                    {accountType.type === 'cash' && 'Dinero en efectivo y monedas'}
-                    {accountType.type === 'digital' && 'PayPal, Mercado Pago, billeteras digitales'}
-                    {accountType.type === 'investment' && 'Acciones, fondos, criptomonedas'}
+                    {accountTypeDescriptions[accountType.type]}
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
@@ -419,15 +425,15 @@ const WalletsScreen = () => {
       <View style={styles.emptyIconContainer}>
         <Ionicons name="wallet-outline" size={80} color={colors.textLight} />
       </View>
-      <Text style={styles.emptyTitle}>No tienes cuentas registradas</Text>
+      <Text style={styles.emptyTitle}>{t('wallets.empty.title')}</Text>
       <Text style={styles.emptySubtitle}>
-        Agrega tu primera cuenta para comenzar a gestionar tus finanzas
+        {t('wallets.empty.subtitle')}
       </Text>
       <TouchableOpacity 
         style={styles.emptyButton}
         onPress={() => navigation.navigate('AddWallet')}
       >
-        <Text style={styles.emptyButtonText}>Agregar Primera Cuenta</Text>
+        <Text style={styles.emptyButtonText}>{t('wallets.empty.button')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -437,7 +443,7 @@ const WalletsScreen = () => {
       <View style={[styles.container, styles.centered]}>
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-          {!userId ? 'Obteniendo usuario...' : 'Cargando cuentas...'}
+          {!userId ? t('wallets.loading.user') : t('wallets.loading.accounts')}
         </Text>
       </View>
     );
@@ -472,10 +478,12 @@ const WalletsScreen = () => {
         ) : (
           <>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Mis Cuentas ({wallets.length})</Text>
+              <Text style={styles.sectionTitle}>
+                {t('wallets.myAccounts', { count: wallets.length })}
+              </Text>
               <TouchableOpacity style={styles.sortButton}>
                 <Ionicons name="swap-vertical" size={16} color={colors.textSecondary} />
-                <Text style={styles.sortText}>Ordenar</Text>
+                <Text style={styles.sortText}>{t('wallets.sort')}</Text>
               </TouchableOpacity>
             </View>
 

@@ -17,6 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import Constants from 'expo-constants';
 
 const API_BASE_URL = Constants.expoConfig?.extra?.API_URL;
@@ -27,6 +28,7 @@ const EditAccountScreen = () => {
   const { account } = route.params; // Recibe la cuenta a editar
   const { colors, isDark } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { t } = useTranslation();
   
   const [accountName, setAccountName] = useState('');
   const [initialBalance, setInitialBalance] = useState('');
@@ -68,16 +70,16 @@ const EditAccountScreen = () => {
           await loadInitialData();
           populateAccountData();
         } else {
-          Alert.alert('Error', 'No se pudo obtener la información del usuario del token');
+          Alert.alert(t('common.error'), t('editAccount.errors.userInfoNotFound'));
           navigation.goBack();
         }
       } else {
-        Alert.alert('Error', 'Token de usuario no encontrado');
+        Alert.alert(t('common.error'), t('editAccount.errors.userTokenNotFound'));
         navigation.goBack();
       }
     } catch (error) {
       console.error('Error decoding JWT:', error);
-      Alert.alert('Error', 'Error al procesar el token de usuario');
+      Alert.alert(t('common.error'), t('editAccount.errors.tokenProcessError'));
       navigation.goBack();
     } finally {
       setLoading(false);
@@ -93,7 +95,7 @@ const EditAccountScreen = () => {
       ]);
     } catch (error) {
       console.error('Error loading initial data:', error);
-      Alert.alert('Error', 'No se pudieron cargar los datos necesarios');
+      Alert.alert(t('common.error'), t('editAccount.errors.loadInitialData'));
     }
   };
 
@@ -189,27 +191,27 @@ const EditAccountScreen = () => {
 
   const validateForm = () => {
     if (!accountName.trim()) {
-      Alert.alert('Error', 'Por favor ingresa un nombre para la cuenta');
+      Alert.alert(t('common.error'), t('editAccount.validation.accountNameRequired'));
       return false;
     }
 
     if (!selectedTipoCuenta) {
-      Alert.alert('Error', 'Por favor selecciona el tipo de cuenta');
+      Alert.alert(t('common.error'), t('editAccount.validation.accountTypeRequired'));
       return false;
     }
 
     if (!selectedBank) {
-      Alert.alert('Error', 'Por favor selecciona el banco');
+      Alert.alert(t('common.error'), t('editAccount.validation.bankRequired'));
       return false;
     }
 
     if (!selectedColor) {
-      Alert.alert('Error', 'Por favor selecciona un color para la cuenta');
+      Alert.alert(t('common.error'), t('editAccount.validation.colorRequired'));
       return false;
     }
 
     if (!initialBalance || parseFloat(initialBalance) < 0) {
-      Alert.alert('Error', 'Por favor ingresa un saldo inicial válido');
+      Alert.alert(t('common.error'), t('editAccount.validation.validBalanceRequired'));
       return false;
     }
 
@@ -220,7 +222,7 @@ const EditAccountScreen = () => {
     if (!validateForm()) return;
 
     if (!userId || !account?.id) {
-      Alert.alert('Error', 'No se pudo obtener la información necesaria para actualizar la cuenta');
+      Alert.alert(t('common.error'), t('editAccount.errors.updateInfoMissing'));
       return;
     }
 
@@ -262,10 +264,10 @@ const EditAccountScreen = () => {
           const data = await response.json();
           console.log('Success response:', data);
           Alert.alert(
-            'Éxito', 
-            'Cuenta actualizada correctamente',
+            t('common.success'), 
+            t('editAccount.success.accountUpdated'),
             [{ 
-              text: 'OK', 
+              text: t('common.ok'), 
               onPress: () => navigation.goBack() 
             }]
           );
@@ -274,10 +276,10 @@ const EditAccountScreen = () => {
           const textResponse = await response.text();
           console.log('Non-JSON success response:', textResponse);
           Alert.alert(
-            'Éxito', 
-            'Cuenta actualizada correctamente',
+            t('common.success'), 
+            t('editAccount.success.accountUpdated'),
             [{ 
-              text: 'OK', 
+              text: t('common.ok'), 
               onPress: () => navigation.goBack() 
             }]
           );
@@ -287,7 +289,7 @@ const EditAccountScreen = () => {
         const textResponse = await response.text();
         console.log('Error response text:', textResponse);
         
-        let errorMessage = 'Error al actualizar la cuenta';
+        let errorMessage = t('editAccount.errors.updateAccountFailed');
         
         try {
           // Intentar parsear como JSON si es posible
@@ -296,7 +298,7 @@ const EditAccountScreen = () => {
         } catch (parseError) {
           // Si no es JSON válido, usar el texto directamente
           console.log('Could not parse error response as JSON:', parseError);
-          errorMessage = `Error del servidor (${response.status}): ${textResponse.substring(0, 200)}`;
+          errorMessage = `${t('editAccount.errors.serverError')} (${response.status}): ${textResponse.substring(0, 200)}`;
         }
         
         throw new Error(errorMessage);
@@ -304,19 +306,19 @@ const EditAccountScreen = () => {
     } catch (error) {
       console.error('Error updating account:', error);
       
-      let userMessage = 'No se pudo actualizar la cuenta. Por favor, intenta de nuevo.';
+      let userMessage = t('editAccount.errors.updateAccountGeneric');
       
       if (error.message.includes('JSON Parse error')) {
-        userMessage = 'Error de comunicación con el servidor. Verifica tu conexión.';
+        userMessage = t('editAccount.errors.communicationError');
       } else if (error.message.includes('Network request failed')) {
-        userMessage = 'Error de conexión. Verifica tu conexión a internet.';
+        userMessage = t('editAccount.errors.connectionError');
       } else if (error.message.includes('fetch')) {
-        userMessage = 'Error de red. Verifica que el servidor esté disponible.';
+        userMessage = t('editAccount.errors.networkError');
       } else if (error.message) {
         userMessage = error.message;
       }
       
-      Alert.alert('Error', userMessage);
+      Alert.alert(t('common.error'), userMessage);
     } finally {
       setSaving(false);
     }
@@ -324,15 +326,15 @@ const EditAccountScreen = () => {
 
   const handleDelete = () => {
     Alert.alert(
-      'Eliminar Cuenta',
-      '¿Estás seguro de que deseas eliminar esta cuenta? Esta acción no se puede deshacer.',
+      t('editAccount.delete.title'),
+      t('editAccount.delete.message'),
       [
         {
-          text: 'Cancelar',
+          text: t('common.cancel'),
           style: 'cancel',
         },
         {
-          text: 'Eliminar',
+          text: t('editAccount.delete.confirm'),
           style: 'destructive',
           onPress: confirmDelete,
         },
@@ -342,7 +344,7 @@ const EditAccountScreen = () => {
 
   const confirmDelete = async () => {
     if (!account?.id) {
-      Alert.alert('Error', 'No se pudo obtener el ID de la cuenta');
+      Alert.alert(t('common.error'), t('editAccount.errors.accountIdNotFound'));
       return;
     }
 
@@ -360,10 +362,10 @@ const EditAccountScreen = () => {
 
       if (response.ok) {
         Alert.alert(
-          'Cuenta Eliminada', 
-          'La cuenta ha sido eliminada correctamente',
+          t('editAccount.delete.successTitle'), 
+          t('editAccount.delete.successMessage'),
           [{ 
-            text: 'OK', 
+            text: t('common.ok'), 
             onPress: () => navigation.goBack() 
           }]
         );
@@ -372,32 +374,31 @@ const EditAccountScreen = () => {
         const textResponse = await response.text();
         console.log('Delete error response:', textResponse);
         
-        let errorMessage = 'Error al eliminar la cuenta';
+        let errorMessage = t('editAccount.errors.deleteAccountFailed');
         
         try {
           const errorData = JSON.parse(textResponse);
           errorMessage = errorData.error || errorData.message || errorMessage;
         } catch (parseError) {
           console.log('Could not parse delete error response as JSON:', parseError);
-          errorMessage = `Error del servidor (${response.status}): ${textResponse.substring(0, 200)}`;
+          errorMessage = `${t('editAccount.errors.serverError')} (${response.status}): ${textResponse.substring(0, 200)}`;
         }
         
-        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error('Error deleting account:', error);
       
-      let userMessage = 'No se pudo eliminar la cuenta. Por favor, intenta de nuevo.';
+      let userMessage = t('editAccount.errors.deleteAccountGeneric');
       
       if (error.message.includes('JSON Parse error')) {
-        userMessage = 'Error de comunicación con el servidor. Verifica tu conexión.';
+        userMessage = t('editAccount.errors.communicationError');
       } else if (error.message.includes('Network request failed')) {
-        userMessage = 'Error de conexión. Verifica tu conexión a internet.';
+        userMessage = t('editAccount.errors.connectionError');
       } else if (error.message) {
         userMessage = error.message;
       }
       
-      Alert.alert('Error', userMessage);
+      Alert.alert(t('common.error'), userMessage);
     } finally {
       setSaving(false);
     }
@@ -412,7 +413,7 @@ const EditAccountScreen = () => {
         <Ionicons name="arrow-back" size={24} color={colors.text} />
       </TouchableOpacity>
       
-      <Text style={styles.headerTitle}>Editar Cuenta</Text>
+      <Text style={styles.headerTitle}>{t('editAccount.title')}</Text>
       
       <View style={styles.headerActions}>
         <TouchableOpacity 
@@ -440,13 +441,13 @@ const EditAccountScreen = () => {
 
   const renderTipoCuentaSelector = () => (
     <View style={styles.formGroup}>
-      <Text style={styles.inputLabel}>Tipo de Cuenta *</Text>
+      <Text style={styles.inputLabel}>{t('editAccount.fields.accountType')} *</Text>
       <TouchableOpacity
         style={styles.selector}
         onPress={() => setShowTipoCuentaModal(true)}
       >
         <Text style={selectedTipoCuenta ? styles.selectedText : styles.selectorPlaceholder}>
-          {selectedTipoCuenta?.descripcion || 'Seleccionar tipo de cuenta'}
+          {selectedTipoCuenta?.descripcion || t('editAccount.placeholders.selectAccountType')}
         </Text>
         <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
       </TouchableOpacity>
@@ -456,37 +457,37 @@ const EditAccountScreen = () => {
   const renderBasicInfo = () => (
     <>
       <View style={styles.formGroup}>
-        <Text style={styles.inputLabel}>Nombre de la Cuenta *</Text>
+        <Text style={styles.inputLabel}>{t('editAccount.fields.accountName')} *</Text>
         <TextInput
           style={styles.textInput}
           value={accountName}
           onChangeText={setAccountName}
-          placeholder="Ej. Mi Cuenta de Ahorros"
+          placeholder={t('editAccount.placeholders.accountName')}
           placeholderTextColor={colors.textLight}
           maxLength={50}
         />
       </View>
 
       <View style={styles.formGroup}>
-        <Text style={styles.inputLabel}>Banco *</Text>
+        <Text style={styles.inputLabel}>{t('editAccount.fields.bank')} *</Text>
         <TouchableOpacity
           style={styles.selector}
           onPress={() => setShowBankModal(true)}
         >
           <Text style={selectedBank ? styles.selectedText : styles.selectorPlaceholder}>
-            {selectedBank?.descripcion || 'Seleccionar banco'}
+            {selectedBank?.descripcion || t('editAccount.placeholders.selectBank')}
           </Text>
           <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
         </TouchableOpacity>
       </View>
 
       <View style={styles.formGroup}>
-        <Text style={styles.inputLabel}>Número de Cuenta</Text>
+        <Text style={styles.inputLabel}>{t('editAccount.fields.accountNumber')}</Text>
         <TextInput
           style={styles.textInput}
           value={accountNumber}
           onChangeText={setAccountNumber}
-          placeholder="****1234"
+          placeholder={t('editAccount.placeholders.accountNumber')}
           placeholderTextColor={colors.textLight}
         />
       </View>
@@ -495,7 +496,7 @@ const EditAccountScreen = () => {
 
   const renderAmountInputs = () => (
     <View style={styles.formGroup}>
-      <Text style={styles.inputLabel}>Saldo Actual *</Text>
+      <Text style={styles.inputLabel}>{t('editAccount.fields.currentBalance')} *</Text>
       <View style={styles.amountInputContainer}>
         <Text style={styles.currencySymbol}>$</Text>
         <TextInput
@@ -510,7 +511,7 @@ const EditAccountScreen = () => {
       </View>
       {initialBalance && (
         <Text style={styles.amountPreview}>
-          Saldo: ${parseFloat(initialBalance || 0).toLocaleString('es-MX', { 
+          {t('editAccount.preview.balance')}: ${parseFloat(initialBalance || 0).toLocaleString('es-MX', { 
             minimumFractionDigits: 2,
             maximumFractionDigits: 2 
           })}
@@ -521,7 +522,7 @@ const EditAccountScreen = () => {
 
   const renderColorSelector = () => (
     <View style={styles.formGroup}>
-      <Text style={styles.inputLabel}>Color de la Cuenta *</Text>
+      <Text style={styles.inputLabel}>{t('editAccount.fields.accountColor')} *</Text>
       <TouchableOpacity
         style={styles.colorSelector}
         onPress={() => setShowColorModal(true)}
@@ -531,7 +532,7 @@ const EditAccountScreen = () => {
           { backgroundColor: selectedColor?.codigo_hex || colors.primary }
         ]} />
         <Text style={styles.colorText}>
-          {selectedColor?.descripcion || 'Seleccionar color'}
+          {selectedColor?.descripcion || t('editAccount.placeholders.selectColor')}
         </Text>
         <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
       </TouchableOpacity>
@@ -540,12 +541,12 @@ const EditAccountScreen = () => {
 
   const renderNotes = () => (
     <View style={styles.formGroup}>
-      <Text style={styles.inputLabel}>Notas (Opcional)</Text>
+      <Text style={styles.inputLabel}>{t('editAccount.fields.notes')}</Text>
       <TextInput
         style={[styles.textInput, styles.notesInput]}
         value={notes}
         onChangeText={setNotes}
-        placeholder="Información adicional sobre esta cuenta..."
+        placeholder={t('editAccount.placeholders.notes')}
         placeholderTextColor={colors.textLight}
         multiline
         numberOfLines={3}
@@ -559,7 +560,7 @@ const EditAccountScreen = () => {
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Tipo de Cuenta</Text>
+            <Text style={styles.modalTitle}>{t('editAccount.modals.accountType')}</Text>
             <TouchableOpacity onPress={() => setShowTipoCuentaModal(false)}>
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
@@ -592,7 +593,7 @@ const EditAccountScreen = () => {
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Seleccionar Banco</Text>
+            <Text style={styles.modalTitle}>{t('editAccount.modals.selectBank')}</Text>
             <TouchableOpacity onPress={() => setShowBankModal(false)}>
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
@@ -625,7 +626,7 @@ const EditAccountScreen = () => {
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Seleccionar Color</Text>
+            <Text style={styles.modalTitle}>{t('editAccount.modals.selectColor')}</Text>
             <TouchableOpacity onPress={() => setShowColorModal(false)}>
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
@@ -665,7 +666,7 @@ const EditAccountScreen = () => {
         />
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-          {!userId ? 'Cargando usuario...' : 'Cargando datos de la cuenta...'}
+          {!userId ? t('editAccount.loading.user') : t('editAccount.loading.accountData')}
         </Text>
       </View>
     );

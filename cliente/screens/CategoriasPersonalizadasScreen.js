@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { useTheme, useThemedStyles } from '../contexts/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 const CategoriasPersonalizadasScreen = ({ navigation }) => {
   const [categorias, setCategorias] = useState([]);
@@ -30,9 +31,10 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
   const [editando, setEditando] = useState(false);
   const [userId, setUserId] = useState('');
 
-  // Usar el contexto de tema
+  // Usar el contexto de tema y traducción
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { t } = useTranslation();
 
   const API_BASE_URL = Constants.expoConfig?.extra?.API_URL;
 
@@ -77,11 +79,11 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
         setCategorias(data.data || []);
       } else {
         console.log('❌ Error al cargar categorías:', data.error);
-        Alert.alert('Error', data.error || 'No se pudieron cargar las categorías');
+        Alert.alert(t('common.error'), data.error || t('customCategories.errors.loadCategoriesFailed'));
       }
     } catch (error) {
       console.log('❌ Error de red:', error);
-      Alert.alert('Error', 'Error de conexión. Verifica tu internet.');
+      Alert.alert(t('common.error'), t('customCategories.errors.connectionError'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -95,7 +97,7 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
 
   const handleCrearCategoria = async () => {
     if (!nuevaDescripcion.trim()) {
-      Alert.alert('Error', 'La descripción es obligatoria');
+      Alert.alert(t('common.error'), t('customCategories.validation.descriptionRequired'));
       return;
     }
 
@@ -117,16 +119,16 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
       const data = await response.json();
 
       if (response.ok) {
-        Alert.alert('Éxito', 'Categoría creada exitosamente');
+        Alert.alert(t('common.success'), t('customCategories.success.categoryCreated'));
         setNuevaDescripcion('');
         setCurrentView('list');
         loadCategorias();
       } else {
-        Alert.alert('Error', data.error || 'No se pudo crear la categoría');
+        Alert.alert(t('common.error'), data.error || t('customCategories.errors.createCategoryFailed'));
       }
     } catch (error) {
       console.log('❌ Error al crear categoría:', error);
-      Alert.alert('Error', 'Error de conexión. Intenta nuevamente.');
+      Alert.alert(t('common.error'), t('customCategories.errors.connectionRetry'));
     } finally {
       setCreando(false);
     }
@@ -134,7 +136,7 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
 
   const handleEditarCategoria = async () => {
     if (!descripcionEdit.trim()) {
-      Alert.alert('Error', 'La descripción es obligatoria');
+      Alert.alert(t('common.error'), t('customCategories.validation.descriptionRequired'));
       return;
     }
 
@@ -157,17 +159,17 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
       const data = await response.json();
 
       if (response.ok) {
-        Alert.alert('Éxito', 'Categoría actualizada exitosamente');
+        Alert.alert(t('common.success'), t('customCategories.success.categoryUpdated'));
         setCurrentView('list');
         setSelectedCategoria(null);
         setDescripcionEdit('');
         loadCategorias();
       } else {
-        Alert.alert('Error', data.error || 'No se pudo actualizar la categoría');
+        Alert.alert(t('common.error'), data.error || t('customCategories.errors.updateCategoryFailed'));
       }
     } catch (error) {
       console.log('❌ Error al editar categoría:', error);
-      Alert.alert('Error', 'Error de conexión. Intenta nuevamente.');
+      Alert.alert(t('common.error'), t('customCategories.errors.connectionRetry'));
     } finally {
       setEditando(false);
     }
@@ -175,15 +177,15 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
 
   const handleEliminarCategoria = (categoria) => {
     Alert.alert(
-      'Eliminar Categoría',
-      `¿Estás seguro de que quieres eliminar la categoría "${categoria.descripcion}"?`,
+      t('customCategories.delete.title'),
+      t('customCategories.delete.message', { categoryName: categoria.descripcion }),
       [
         {
-          text: 'Cancelar',
+          text: t('common.cancel'),
           style: 'cancel'
         },
         {
-          text: 'Eliminar',
+          text: t('customCategories.delete.confirm'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -203,14 +205,14 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
               const data = await response.json();
 
               if (response.ok) {
-                Alert.alert('Éxito', 'Categoría eliminada exitosamente');
+                Alert.alert(t('common.success'), t('customCategories.success.categoryDeleted'));
                 loadCategorias();
               } else {
-                Alert.alert('Error', data.error || 'No se pudo eliminar la categoría');
+                Alert.alert(t('common.error'), data.error || t('customCategories.errors.deleteCategoryFailed'));
               }
             } catch (error) {
               console.log('❌ Error al eliminar categoría:', error);
-              Alert.alert('Error', 'Error de conexión. Intenta nuevamente.');
+              Alert.alert(t('common.error'), t('customCategories.errors.connectionRetry'));
             }
           }
         }
@@ -256,7 +258,7 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
           >
             <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Nueva Categoría</Text>
+          <Text style={styles.headerTitle}>{t('customCategories.views.newCategory')}</Text>
           <View style={styles.addButton} />
         </View>
 
@@ -267,18 +269,18 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
               <Ionicons name="add-circle" size={48} color={colors.primary} />
             </View>
             
-            <Text style={styles.formTitle}>Crear Nueva Categoría</Text>
+            <Text style={styles.formTitle}>{t('customCategories.create.title')}</Text>
             <Text style={styles.formDescription}>
-              Ingresa una descripción para tu nueva categoría personalizada
+              {t('customCategories.create.description')}
             </Text>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Descripción de la categoría</Text>
+              <Text style={styles.inputLabel}>{t('customCategories.fields.categoryDescription')}</Text>
               <TextInput
                 style={styles.textInput}
                 value={nuevaDescripcion}
                 onChangeText={setNuevaDescripcion}
-                placeholder="Ej: Entretenimiento, Compras personales..."
+                placeholder={t('customCategories.placeholders.categoryDescription')}
                 placeholderTextColor={colors.textSecondary}
                 maxLength={100}
                 autoFocus={false}
@@ -286,7 +288,7 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
                 onSubmitEditing={handleCrearCategoria}
               />
               <Text style={styles.charCount}>
-                {nuevaDescripcion.length}/100 caracteres
+                {t('customCategories.charCount', { current: nuevaDescripcion.length, max: 100 })}
               </Text>
             </View>
 
@@ -295,7 +297,7 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
                 style={[styles.actionButton, styles.cancelButton]}
                 onPress={goBackToList}
               >
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
+                <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
@@ -308,7 +310,7 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
                 ) : (
                   <>
                     <Ionicons name="checkmark" size={20} color="white" />
-                    <Text style={styles.primaryButtonText}>Crear</Text>
+                    <Text style={styles.primaryButtonText}>{t('customCategories.actions.create')}</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -339,7 +341,7 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
           >
             <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Editar Categoría</Text>
+          <Text style={styles.headerTitle}>{t('customCategories.views.editCategory')}</Text>
           <View style={styles.addButton} />
         </View>
 
@@ -350,18 +352,18 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
               <Ionicons name="pencil" size={48} color={colors.info} />
             </View>
             
-            <Text style={styles.formTitle}>Editar Categoría</Text>
+            <Text style={styles.formTitle}>{t('customCategories.edit.title')}</Text>
             <Text style={styles.formDescription}>
-              Modifica la descripción de tu categoría
+              {t('customCategories.edit.description')}
             </Text>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Descripción de la categoría</Text>
+              <Text style={styles.inputLabel}>{t('customCategories.fields.categoryDescription')}</Text>
               <TextInput
                 style={styles.textInput}
                 value={descripcionEdit}
                 onChangeText={setDescripcionEdit}
-                placeholder="Descripción de la categoría"
+                placeholder={t('customCategories.placeholders.categoryDescriptionEdit')}
                 placeholderTextColor={colors.textSecondary}
                 maxLength={100}
                 autoFocus={false}
@@ -369,7 +371,7 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
                 onSubmitEditing={handleEditarCategoria}
               />
               <Text style={styles.charCount}>
-                {descripcionEdit.length}/100 caracteres
+                {t('customCategories.charCount', { current: descripcionEdit.length, max: 100 })}
               </Text>
             </View>
 
@@ -378,7 +380,7 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
                 style={[styles.actionButton, styles.cancelButton]}
                 onPress={goBackToList}
               >
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
+                <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
@@ -391,7 +393,7 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
                 ) : (
                   <>
                     <Ionicons name="save" size={20} color="white" />
-                    <Text style={styles.primaryButtonText}>Guardar</Text>
+                    <Text style={styles.primaryButtonText}>{t('customCategories.actions.save')}</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -411,7 +413,7 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
           backgroundColor={colors.statusBarBackground} 
         />
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Cargando categorías...</Text>
+        <Text style={styles.loadingText}>{t('customCategories.loading.categories')}</Text>
       </View>
     );
   }
@@ -431,7 +433,7 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
         >
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Mis Categorías</Text>
+        <Text style={styles.headerTitle}>{t('customCategories.title')}</Text>
         <TouchableOpacity 
           onPress={openCreateView}
           style={styles.addButton}
@@ -459,13 +461,21 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
           <View style={styles.infoIconContainer}>
             <Ionicons name="pricetags-outline" size={32} color={colors.primary} />
           </View>
-          <Text style={styles.infoTitle}>Categorías Personalizadas</Text>
+          <Text style={styles.infoTitle}>{t('customCategories.info.title')}</Text>
           <Text style={styles.infoDescription}>
-            Organiza tus gastos creando categorías personalizadas que se adapten a tu estilo de vida
+            {t('customCategories.info.description')}
           </Text>
           <View style={styles.statsRow}>
             <Text style={styles.statsText}>
-              {categorias.length} categoría{categorias.length !== 1 ? 's' : ''} creada{categorias.length !== 1 ? 's' : ''}
+              {t('customCategories.info.statsText', { 
+                count: categorias.length,
+                categoryText: categorias.length === 1 
+                  ? t('customCategories.info.categorySingular')
+                  : t('customCategories.info.categoryPlural'),
+                createdText: categorias.length === 1 
+                  ? t('customCategories.info.createdSingular')
+                  : t('customCategories.info.createdPlural')
+              })}
             </Text>
           </View>
         </View>
@@ -473,7 +483,7 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
         {/* Categorías List */}
         {categorias.length > 0 ? (
           <View style={styles.categoriasSection}>
-            <Text style={styles.sectionTitle}>Tus Categorías</Text>
+            <Text style={styles.sectionTitle}>{t('customCategories.sections.yourCategories')}</Text>
             {categorias.map((categoria, index) => (
               <View key={categoria.id_categoria} style={styles.categoriaItem}>
                 <View style={styles.categoriaLeft}>
@@ -483,7 +493,7 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
                   <View style={styles.categoriaText}>
                     <Text style={styles.categoriaTitle}>{categoria.descripcion}</Text>
                     <Text style={styles.categoriaSubtitle}>
-                      Categoría personalizada #{index + 1}
+                      {t('customCategories.categoryItem.subtitle', { number: index + 1 })}
                     </Text>
                   </View>
                 </View>
@@ -507,16 +517,16 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
         ) : (
           <View style={styles.emptyState}>
             <Ionicons name="pricetags-outline" size={64} color={colors.textSecondary} />
-            <Text style={styles.emptyTitle}>Sin categorías personalizadas</Text>
+            <Text style={styles.emptyTitle}>{t('customCategories.empty.title')}</Text>
             <Text style={styles.emptyDescription}>
-              Aún no has creado ninguna categoría personalizada. ¡Crea tu primera categoría para organizar mejor tus gastos!
+              {t('customCategories.empty.description')}
             </Text>
             <TouchableOpacity 
               style={styles.emptyButton}
               onPress={openCreateView}
             >
               <Ionicons name="add" size={20} color="white" />
-              <Text style={styles.emptyButtonText}>Crear primera categoría</Text>
+              <Text style={styles.emptyButtonText}>{t('customCategories.empty.buttonText')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -528,7 +538,7 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
             onPress={openCreateView}
           >
             <Ionicons name="add-circle-outline" size={24} color={colors.primary} />
-            <Text style={styles.quickActionText}>Nueva Categoría</Text>
+            <Text style={styles.quickActionText}>{t('customCategories.quickActions.newCategory')}</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
@@ -536,7 +546,7 @@ const CategoriasPersonalizadasScreen = ({ navigation }) => {
             onPress={onRefresh}
           >
             <Ionicons name="refresh-outline" size={24} color={colors.success} />
-            <Text style={styles.quickActionText}>Actualizar</Text>
+            <Text style={styles.quickActionText}>{t('customCategories.quickActions.refresh')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

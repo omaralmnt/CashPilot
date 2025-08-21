@@ -13,7 +13,102 @@
     "featureComingSoon": "This feature will be available soon",
     "seeAll": "See all",
     "seeMore": "See more",
-    "defaultUser": "User"
+    "defaultUser": "User",
+    "warning": "Warning",
+    "understood": "Understood"
+
+  },
+    "customCategories": {
+    "title": "My Categories",
+    
+    "views": {
+      "newCategory": "New Category",
+      "editCategory": "Edit Category"
+    },
+    
+    "create": {
+      "title": "Create New Category",
+      "description": "Enter a description for your new custom category"
+    },
+    
+    "edit": {
+      "title": "Edit Category",
+      "description": "Modify your category description"
+    },
+    
+    "fields": {
+      "categoryDescription": "Category description"
+    },
+    
+    "placeholders": {
+      "categoryDescription": "e.g. Entertainment, Personal shopping...",
+      "categoryDescriptionEdit": "Category description"
+    },
+    
+    "validation": {
+      "descriptionRequired": "Description is required"
+    },
+    
+    "actions": {
+      "create": "Create",
+      "save": "Save"
+    },
+    
+    "charCount": "{{current}}/{{max}} characters",
+    
+    "delete": {
+      "title": "Delete Category",
+      "message": "Are you sure you want to delete the category \"{{categoryName}}\"?",
+      "confirm": "Delete"
+    },
+    
+    "success": {
+      "categoryCreated": "Category created successfully",
+      "categoryUpdated": "Category updated successfully",
+      "categoryDeleted": "Category deleted successfully"
+    },
+    
+    "errors": {
+      "loadCategoriesFailed": "Could not load categories",
+      "connectionError": "Connection error. Check your internet.",
+      "connectionRetry": "Connection error. Please try again.",
+      "createCategoryFailed": "Could not create category",
+      "updateCategoryFailed": "Could not update category",
+      "deleteCategoryFailed": "Could not delete category"
+    },
+    
+    "loading": {
+      "categories": "Loading categories..."
+    },
+    
+    "info": {
+      "title": "Custom Categories",
+      "description": "Organize your expenses by creating custom categories that fit your lifestyle",
+      "statsText": "{{count}} {{categoryText}} {{createdText}}",
+      "categorySingular": "category",
+      "categoryPlural": "categories",
+      "createdSingular": "created",
+      "createdPlural": "created"
+    },
+    
+    "sections": {
+      "yourCategories": "Your Categories"
+    },
+    
+    "categoryItem": {
+      "subtitle": "Custom category #{{number}}"
+    },
+    
+    "empty": {
+      "title": "No custom categories",
+      "description": "You haven't created any custom categories yet. Create your first category to better organize your expenses!",
+      "buttonText": "Create first category"
+    },
+    
+    "quickActions": {
+      "newCategory": "New Category",
+      "refresh": "Refresh"
+    }
   },
   "profile": {
     "title": "My Profile",
@@ -337,6 +432,198 @@
     "modal": {
       "categoryDetails": "{{count}} transactions • {{percentage}}% of total",
       "transactions": "Transactions"
+    }
+  },
+  "wallets": {
+    "title": "My Accounts",
+    "errors": {
+      "noUserInfo": "Could not get user information from token",
+      "noUserToken": "User token not found",
+      "tokenProcessing": "Error processing user token",
+      "loadAccounts": "Error loading accounts",
+      "loadAccountsMessage": "Could not load accounts. Please try again."
+    },
+    "summary": {
+      "totalAssets": "Total Net Worth",
+      "assets": "Assets",
+      "debts": "Debts"
+    },
+    "accountTypes": {
+      "bank": "Bank Account",
+      "credit": "Credit Card",
+      "cash": "Cash",
+      "digital": "Digital Wallet",
+      "investment": "Investments",
+      "descriptions": {
+        "bank": "Savings, debit or payroll accounts",
+        "credit": "Credit cards and lines of credit",
+        "cash": "Cash and coins",
+        "digital": "PayPal, Mercado Pago, digital wallets",
+        "investment": "Stocks, funds, cryptocurrencies"
+      }
+    },
+    "balance": {
+      "available": "Available Balance",
+      "current": "Current Balance"
+    },
+    "addAccount": {
+      "title": "Add Account",
+      "subtitle": "Select account type"
+    },
+    "empty": {
+      "title": "You have no registered accounts",
+      "subtitle": "Add your first account to start managing your finances",
+      "button": "Add First Account"
+    },
+    "delete": {
+      "title": "Delete Account",
+      "message": "Are you sure you want to delete this account? This action cannot be undone.",
+      "success": "Account deleted successfully"
+    },
+    "loading": {
+      "user": "Getting user...",
+      "accounts": "Loading accounts..."
+    },
+    "myAccounts": "My Accounts ({{count}})",
+    "sort": "Sort"
+  },
+  "editAccount": {
+    "title": "Edit Account",
+    
+    "fields": {
+      "accountType": "Account Type",
+      "accountName": "Account Name",
+      "bank": "Bank",
+      "accountNumber": "Account Number",
+      "currentBalance": "Current Balance",
+      "accountColor": "Account Color",
+      "notes": "Notes (Optional)"
+    },
+    
+    "placeholders": {
+      "selectAccountType": "Select account type",
+      "accountName": "e.g. My Savings Account",
+      "selectBank": "Select bank",
+      "accountNumber": "****1234",
+      "selectColor": "Select color",
+      "notes": "Additional information about this account..."
+    },
+    
+    "validation": {
+      "accountNameRequired": "Please enter an account name",
+      "accountTypeRequired": "Please select the account type",
+      "bankRequired": "Please select the bank",
+      "colorRequired": "Please select a color for the account",
+      "validBalanceRequired": "Please enter a valid initial balance"
+    },
+    
+    "preview": {
+      "balance": "Balance"
+    },
+    
+    "modals": {
+      "accountType": "Account Type",
+      "selectBank": "Select Bank",
+      "selectColor": "Select Color"
+    },
+    
+    "delete": {
+      "title": "Delete Account",
+      "message": "Are you sure you want to delete this account? This action cannot be undone.",
+      "confirm": "Delete",
+      "successTitle": "Account Deleted",
+      "successMessage": "The account has been successfully deleted"
+    },
+    
+    "success": {
+      "accountUpdated": "Account updated successfully"
+    },
+    
+    "errors": {
+      "userInfoNotFound": "Could not get user information from token",
+      "userTokenNotFound": "User token not found",
+      "tokenProcessError": "Error processing user token",
+      "loadInitialData": "Could not load necessary data",
+      "updateInfoMissing": "Could not get necessary information to update the account",
+      "updateAccountFailed": "Error updating account",
+      "updateAccountGeneric": "Could not update the account. Please try again.",
+      "accountIdNotFound": "Could not get the account ID",
+      "deleteAccountFailed": "Error deleting account",
+      "deleteAccountGeneric": "Could not delete the account. Please try again.",
+      "serverError": "Server error",
+      "communicationError": "Communication error with server. Check your connection.",
+      "connectionError": "Connection error. Check your internet connection.",
+      "networkError": "Network error. Verify that the server is available."
+    },
+    
+    "loading": {
+      "user": "Loading user...",
+      "accountData": "Loading account data..."
+    }
+  },
+    "editProfile": {
+    "title": "Edit Profile",
+    
+    "sections": {
+      "personalInfo": "Personal Information",
+      "changePassword": "Change Password",
+      "passwordInstructions": "Leave these fields empty if you don't want to change your password"
+    },
+    
+    "fields": {
+      "fullName": "Full Name",
+      "username": "Username",
+      "email": "Email",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm New Password"
+    },
+    
+    "placeholders": {
+      "fullName": "Enter your full name",
+      "username": "Enter your username",
+      "email": "Enter your email address",
+      "currentPassword": "Enter your current password",
+      "newPassword": "Enter your new password (min. 6 characters)",
+      "confirmPassword": "Confirm your new password"
+    },
+    
+    "validation": {
+      "nameRequired": "Name is required",
+      "usernameRequired": "Username is required",
+      "invalidEmail": "Email format is not valid",
+      "currentPasswordRequired": "You must enter your current password to change it",
+      "passwordMinLength": "New password must be at least 6 characters",
+      "passwordsNoMatch": "New passwords do not match"
+    },
+    
+    "actions": {
+      "saveChanges": "Save Changes"
+    },
+    
+    "info": {
+      "requiredFields": "Fields marked with (*) are required. Your information will be kept safe and private."
+    },
+    
+    "success": {
+      "profileUpdated": "Profile updated successfully"
+    },
+    
+    "errors": {
+      "tokenNotFound": "Authentication token not found",
+      "invalidToken": "Invalid token: User ID not found",
+      "loadProfileFailed": "Could not load profile information.",
+      "sessionExpired": "Session expired. Please log in again.",
+      "noPermissions": "You don't have permissions to access this information.",
+      "userNotFound": "User not found.",
+      "connectionError": "Connection error. Check your internet.",
+      "basicDataOnly": "Only basic data is shown.",
+      "updateProfileGeneric": "Could not update profile. Please try again."
+    },
+    
+    "loading": {
+      "profileInfo": "Loading profile information...",
+      "saving": "Loading..."
     }
   },
   "transfer": {

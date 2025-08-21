@@ -15,10 +15,12 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { useTheme } from '../contexts/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 const EditProfileModal = ({ visible, onClose, onSuccess }) => {
   const { colors } = useTheme();
   const styles = createStyles(colors);
+  const { t } = useTranslation();
 
   // Obtener API URL desde app.json
   const API_URL = Constants.expoConfig?.extra?.API_URL || 'http://localhost:4000';
@@ -56,14 +58,14 @@ const EditProfileModal = ({ visible, onClose, onSuccess }) => {
       // Obtener token y extraer ID del usuario
       const token = await AsyncStorage.getItem('userToken');
       if (!token) {
-        throw new Error('No se encontró token de autenticación');
+        throw new Error(t('editProfile.errors.tokenNotFound'));
       }
 
       const payload = JSON.parse(atob(token.split('.')[1]));
       const userIdFromToken = payload.id_usuario;
       
       if (!userIdFromToken) {
-        throw new Error('Token inválido: ID de usuario no encontrado');
+        throw new Error(t('editProfile.errors.invalidToken'));
       }
 
       setUserId(userIdFromToken);
@@ -103,16 +105,16 @@ const EditProfileModal = ({ visible, onClose, onSuccess }) => {
       console.log('❌ Error loading user info:', error);
       
       // Manejar errores específicos del servidor
-      let errorMessage = 'No se pudo cargar la información del perfil.';
+      let errorMessage = t('editProfile.errors.loadProfileFailed');
       
       if (error.message.includes('401')) {
-        errorMessage = 'Sesión expirada. Por favor, inicia sesión nuevamente.';
+        errorMessage = t('editProfile.errors.sessionExpired');
       } else if (error.message.includes('403')) {
-        errorMessage = 'No tienes permisos para acceder a esta información.';
+        errorMessage = t('editProfile.errors.noPermissions');
       } else if (error.message.includes('404')) {
-        errorMessage = 'Usuario no encontrado.';
+        errorMessage = t('editProfile.errors.userNotFound');
       } else if (error.message.includes('Network')) {
-        errorMessage = 'Error de conexión. Verifica tu internet.';
+        errorMessage = t('editProfile.errors.connectionError');
       }
       
       // En caso de error, usar fallback con datos del token (limitados)
@@ -132,14 +134,14 @@ const EditProfileModal = ({ visible, onClose, onSuccess }) => {
           }));
           
           Alert.alert(
-            'Advertencia', 
-            `${errorMessage} Solo se muestran datos básicos.`,
-            [{ text: 'Entendido' }]
+            t('common.warning'), 
+            `${errorMessage} ${t('editProfile.errors.basicDataOnly')}`,
+            [{ text: t('common.understood') }]
           );
         }
       } catch (fallbackError) {
         console.log('❌ Error en fallback:', fallbackError);
-        Alert.alert('Error', errorMessage);
+        Alert.alert(t('common.error'), errorMessage);
       }
     } finally {
       setIsLoading(false);
@@ -149,35 +151,35 @@ const EditProfileModal = ({ visible, onClose, onSuccess }) => {
   const validateForm = () => {
     // Validar campos obligatorios
     if (!formData.nombre.trim()) {
-      Alert.alert('Error', 'El nombre es obligatorio');
+      Alert.alert(t('common.error'), t('editProfile.validation.nameRequired'));
       return false;
     }
 
     if (!formData.username.trim()) {
-      Alert.alert('Error', 'El nombre de usuario es obligatorio');
+      Alert.alert(t('common.error'), t('editProfile.validation.usernameRequired'));
       return false;
     }
 
     // Validar email si se proporciona
     if (formData.correo && !isValidEmail(formData.correo)) {
-      Alert.alert('Error', 'El formato del correo electrónico no es válido');
+      Alert.alert(t('common.error'), t('editProfile.validation.invalidEmail'));
       return false;
     }
 
     // Si se quiere cambiar la contraseña
     if (formData.newPassword || formData.confirmPassword) {
       if (!formData.currentPassword) {
-        Alert.alert('Error', 'Debes ingresar tu contraseña actual para cambiarla');
+        Alert.alert(t('common.error'), t('editProfile.validation.currentPasswordRequired'));
         return false;
       }
 
       if (formData.newPassword.length < 6) {
-        Alert.alert('Error', 'La nueva contraseña debe tener al menos 6 caracteres');
+        Alert.alert(t('common.error'), t('editProfile.validation.passwordMinLength'));
         return false;
       }
 
       if (formData.newPassword !== formData.confirmPassword) {
-        Alert.alert('Error', 'Las contraseñas nuevas no coinciden');
+        Alert.alert(t('common.error'), t('editProfile.validation.passwordsNoMatch'));
         return false;
       }
     }
@@ -240,11 +242,11 @@ const EditProfileModal = ({ visible, onClose, onSuccess }) => {
       }
 
       Alert.alert(
-        'Éxito',
-        updatedUser.mensaje || 'Perfil actualizado correctamente',
+        t('common.success'),
+        updatedUser.mensaje || t('editProfile.success.profileUpdated'),
         [
           {
-            text: 'OK',
+            text: t('common.ok'),
             onPress: () => {
               // Limpiar campos de contraseña
               setFormData(prev => ({
@@ -277,9 +279,9 @@ const EditProfileModal = ({ visible, onClose, onSuccess }) => {
       // Mostrar el mensaje de error específico del servidor si está disponible
       const errorMessage = error.message.includes('Error') 
         ? error.message 
-        : 'No se pudo actualizar el perfil. Inténtalo de nuevo.';
+        : t('editProfile.errors.updateProfileGeneric');
         
-      Alert.alert('Error', errorMessage);
+      Alert.alert(t('common.error'), errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -324,7 +326,7 @@ const EditProfileModal = ({ visible, onClose, onSuccess }) => {
         <View style={styles.modalContent}>
           {/* Header */}
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Editar Perfil</Text>
+            <Text style={styles.modalTitle}>{t('editProfile.title')}</Text>
             <TouchableOpacity 
               onPress={handleClose}
               style={styles.closeButton}
@@ -343,21 +345,21 @@ const EditProfileModal = ({ visible, onClose, onSuccess }) => {
             {isLoading && (
               <View style={styles.loadingSection}>
                 <Ionicons name="refresh" size={24} color={colors.primary} />
-                <Text style={styles.loadingText}>Cargando información del perfil...</Text>
+                <Text style={styles.loadingText}>{t('editProfile.loading.profileInfo')}</Text>
               </View>
             )}
 
             {/* Información Personal */}
             <View style={[styles.formSection, isLoading && styles.formSectionDisabled]}>
-              <Text style={styles.sectionTitle}>Información Personal</Text>
+              <Text style={styles.sectionTitle}>{t('editProfile.sections.personalInfo')}</Text>
               
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Nombre Completo *</Text>
+                <Text style={styles.inputLabel}>{t('editProfile.fields.fullName')} *</Text>
                 <TextInput
                   style={[styles.textInput, isLoading && styles.textInputDisabled]}
                   value={formData.nombre}
                   onChangeText={(text) => handleInputChange('nombre', text)}
-                  placeholder="Ingresa tu nombre completo"
+                  placeholder={t('editProfile.placeholders.fullName')}
                   placeholderTextColor={colors.textLight}
                   returnKeyType="next"
                   editable={!isLoading}
@@ -365,12 +367,12 @@ const EditProfileModal = ({ visible, onClose, onSuccess }) => {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Nombre de Usuario *</Text>
+                <Text style={styles.inputLabel}>{t('editProfile.fields.username')} *</Text>
                 <TextInput
                   style={[styles.textInput, isLoading && styles.textInputDisabled]}
                   value={formData.username}
                   onChangeText={(text) => handleInputChange('username', text)}
-                  placeholder="Ingresa tu nombre de usuario"
+                  placeholder={t('editProfile.placeholders.username')}
                   placeholderTextColor={colors.textLight}
                   autoCapitalize="none"
                   returnKeyType="next"
@@ -379,12 +381,12 @@ const EditProfileModal = ({ visible, onClose, onSuccess }) => {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Correo Electrónico</Text>
+                <Text style={styles.inputLabel}>{t('editProfile.fields.email')}</Text>
                 <TextInput
                   style={[styles.textInput, isLoading && styles.textInputDisabled]}
                   value={formData.correo}
                   onChangeText={(text) => handleInputChange('correo', text)}
-                  placeholder="Ingresa tu correo electrónico"
+                  placeholder={t('editProfile.placeholders.email')}
                   placeholderTextColor={colors.textLight}
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -396,19 +398,19 @@ const EditProfileModal = ({ visible, onClose, onSuccess }) => {
 
             {/* Cambiar Contraseña */}
             <View style={[styles.formSection, isLoading && styles.formSectionDisabled]}>
-              <Text style={styles.sectionTitle}>Cambiar Contraseña</Text>
+              <Text style={styles.sectionTitle}>{t('editProfile.sections.changePassword')}</Text>
               <Text style={styles.sectionSubtitle}>
-                Deja estos campos vacíos si no quieres cambiar tu contraseña
+                {t('editProfile.sections.passwordInstructions')}
               </Text>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Contraseña Actual</Text>
+                <Text style={styles.inputLabel}>{t('editProfile.fields.currentPassword')}</Text>
                 <View style={[styles.passwordContainer, isLoading && styles.textInputDisabled]}>
                   <TextInput
                     style={styles.passwordInput}
                     value={formData.currentPassword}
                     onChangeText={(text) => handleInputChange('currentPassword', text)}
-                    placeholder="Ingresa tu contraseña actual"
+                    placeholder={t('editProfile.placeholders.currentPassword')}
                     placeholderTextColor={colors.textLight}
                     secureTextEntry={!showPasswords.current}
                     returnKeyType="next"
@@ -429,13 +431,13 @@ const EditProfileModal = ({ visible, onClose, onSuccess }) => {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Nueva Contraseña</Text>
+                <Text style={styles.inputLabel}>{t('editProfile.fields.newPassword')}</Text>
                 <View style={[styles.passwordContainer, isLoading && styles.textInputDisabled]}>
                   <TextInput
                     style={styles.passwordInput}
                     value={formData.newPassword}
                     onChangeText={(text) => handleInputChange('newPassword', text)}
-                    placeholder="Ingresa tu nueva contraseña (mín. 6 caracteres)"
+                    placeholder={t('editProfile.placeholders.newPassword')}
                     placeholderTextColor={colors.textLight}
                     secureTextEntry={!showPasswords.new}
                     returnKeyType="next"
@@ -456,13 +458,13 @@ const EditProfileModal = ({ visible, onClose, onSuccess }) => {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Confirmar Nueva Contraseña</Text>
+                <Text style={styles.inputLabel}>{t('editProfile.fields.confirmPassword')}</Text>
                 <View style={[styles.passwordContainer, isLoading && styles.textInputDisabled]}>
                   <TextInput
                     style={styles.passwordInput}
                     value={formData.confirmPassword}
                     onChangeText={(text) => handleInputChange('confirmPassword', text)}
-                    placeholder="Confirma tu nueva contraseña"
+                    placeholder={t('editProfile.placeholders.confirmPassword')}
                     placeholderTextColor={colors.textLight}
                     secureTextEntry={!showPasswords.confirm}
                     returnKeyType="done"
@@ -488,8 +490,7 @@ const EditProfileModal = ({ visible, onClose, onSuccess }) => {
             <View style={styles.infoBox}>
               <Ionicons name="information-circle-outline" size={20} color={colors.info} />
               <Text style={styles.infoText}>
-                Los campos marcados con (*) son obligatorios. 
-                Tu información se mantendrá segura y privada.
+                {t('editProfile.info.requiredFields')}
               </Text>
             </View>
           </ScrollView>
@@ -501,7 +502,7 @@ const EditProfileModal = ({ visible, onClose, onSuccess }) => {
               onPress={handleClose}
               disabled={isLoading}
             >
-              <Text style={styles.cancelButtonText}>Cancelar</Text>
+              <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -511,12 +512,12 @@ const EditProfileModal = ({ visible, onClose, onSuccess }) => {
             >
               {isLoading ? (
                 <View style={styles.loadingContainer}>
-                  <Text style={styles.saveButtonText}>Cargando...</Text>
+                  <Text style={styles.saveButtonText}>{t('editProfile.loading.saving')}</Text>
                 </View>
               ) : (
                 <>
                   <Ionicons name="checkmark" size={20} color="white" />
-                  <Text style={styles.saveButtonText}>Guardar Cambios</Text>
+                  <Text style={styles.saveButtonText}>{t('editProfile.actions.saveChanges')}</Text>
                 </>
               )}
             </TouchableOpacity>

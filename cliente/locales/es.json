@@ -13,7 +13,103 @@
     "featureComingSoon": "Esta función estará disponible pronto",
     "seeAll": "Ver todas",
     "seeMore": "Ver más",
-    "defaultUser": "Usuario"
+    "defaultUser": "Usuario",
+    "understood": "Entendido",
+    "warning": "Advertencia"
+
+
+  },
+   "customCategories": {
+    "title": "Mis Categorías",
+    
+    "views": {
+      "newCategory": "Nueva Categoría",
+      "editCategory": "Editar Categoría"
+    },
+    
+    "create": {
+      "title": "Crear Nueva Categoría",
+      "description": "Ingresa una descripción para tu nueva categoría personalizada"
+    },
+    
+    "edit": {
+      "title": "Editar Categoría",
+      "description": "Modifica la descripción de tu categoría"
+    },
+    
+    "fields": {
+      "categoryDescription": "Descripción de la categoría"
+    },
+    
+    "placeholders": {
+      "categoryDescription": "Ej: Entretenimiento, Compras personales...",
+      "categoryDescriptionEdit": "Descripción de la categoría"
+    },
+    
+    "validation": {
+      "descriptionRequired": "La descripción es obligatoria"
+    },
+    
+    "actions": {
+      "create": "Crear",
+      "save": "Guardar"
+    },
+    
+    "charCount": "{{current}}/{{max}} caracteres",
+    
+    "delete": {
+      "title": "Eliminar Categoría",
+      "message": "¿Estás seguro de que quieres eliminar la categoría \"{{categoryName}}\"?",
+      "confirm": "Eliminar"
+    },
+    
+    "success": {
+      "categoryCreated": "Categoría creada exitosamente",
+      "categoryUpdated": "Categoría actualizada exitosamente",
+      "categoryDeleted": "Categoría eliminada exitosamente"
+    },
+    
+    "errors": {
+      "loadCategoriesFailed": "No se pudieron cargar las categorías",
+      "connectionError": "Error de conexión. Verifica tu internet.",
+      "connectionRetry": "Error de conexión. Intenta nuevamente.",
+      "createCategoryFailed": "No se pudo crear la categoría",
+      "updateCategoryFailed": "No se pudo actualizar la categoría",
+      "deleteCategoryFailed": "No se pudo eliminar la categoría"
+    },
+    
+    "loading": {
+      "categories": "Cargando categorías..."
+    },
+    
+    "info": {
+      "title": "Categorías Personalizadas",
+      "description": "Organiza tus gastos creando categorías personalizadas que se adapten a tu estilo de vida",
+      "statsText": "{{count}} {{categoryText}} {{createdText}}",
+      "categorySingular": "categoría",
+      "categoryPlural": "categorías",
+      "createdSingular": "creada",
+      "createdPlural": "creadas"
+    },
+    
+    "sections": {
+      "yourCategories": "Tus Categorías"
+    },
+    
+    "categoryItem": {
+      "subtitle": "Categoría personalizada #{{number}}"
+    },
+    
+    "empty": {
+      "title": "Sin categorías personalizadas",
+      "description": "Aún no has creado ninguna categoría personalizada. ¡Crea tu primera categoría para organizar mejor tus gastos!",
+      "buttonText": "Crear primera categoría"
+    },
+    
+    "quickActions": {
+      "newCategory": "Nueva Categoría",
+      "refresh": "Actualizar"
+    }
   },
   "profile": {
     "title": "Mi Perfil",
@@ -339,6 +435,200 @@
       "transactions": "Transacciones"
     }
   },
+   "wallets": {
+    "title": "Mis Cuentas",
+    "errors": {
+      "noUserInfo": "No se pudo obtener la información del usuario del token",
+      "noUserToken": "Token de usuario no encontrado",
+      "tokenProcessing": "Error al procesar el token de usuario",
+      "loadAccounts": "Error al cargar las cuentas",
+      "loadAccountsMessage": "No se pudieron cargar las cuentas. Por favor, intenta de nuevo."
+    },
+    "summary": {
+      "totalAssets": "Patrimonio Total",
+      "assets": "Activos",
+      "debts": "Deudas"
+    },
+    "accountTypes": {
+      "bank": "Cuenta Bancaria",
+      "credit": "Tarjeta de Crédito",
+      "cash": "Efectivo",
+      "digital": "Monedero Digital",
+      "investment": "Inversiones",
+      "descriptions": {
+        "bank": "Cuentas de ahorro, débito o nómina",
+        "credit": "Tarjetas de crédito y líneas de crédito",
+        "cash": "Dinero en efectivo y monedas",
+        "digital": "PayPal, Mercado Pago, billeteras digitales",
+        "investment": "Acciones, fondos, criptomonedas"
+      }
+    },
+    "balance": {
+      "available": "Saldo Disponible",
+      "current": "Saldo Actual"
+    },
+    "addAccount": {
+      "title": "Agregar Cuenta",
+      "subtitle": "Selecciona el tipo de cuenta"
+    },
+    "empty": {
+      "title": "No tienes cuentas registradas",
+      "subtitle": "Agrega tu primera cuenta para comenzar a gestionar tus finanzas",
+      "button": "Agregar Primera Cuenta"
+    },
+    "delete": {
+      "title": "Eliminar Cuenta",
+      "message": "¿Estás seguro de que deseas eliminar esta cuenta? Esta acción no se puede deshacer.",
+      "success": "Cuenta eliminada correctamente"
+    },
+    "loading": {
+      "user": "Obteniendo usuario...",
+      "accounts": "Cargando cuentas..."
+    },
+    "myAccounts": "Mis Cuentas ({{count}})",
+    "sort": "Ordenar"
+  },
+   "editAccount": {
+    "title": "Editar Cuenta",
+    
+    "fields": {
+      "accountType": "Tipo de Cuenta",
+      "accountName": "Nombre de la Cuenta",
+      "bank": "Banco",
+      "accountNumber": "Número de Cuenta",
+      "currentBalance": "Saldo Actual",
+      "accountColor": "Color de la Cuenta",
+      "notes": "Notas (Opcional)"
+    },
+    
+    "placeholders": {
+      "selectAccountType": "Seleccionar tipo de cuenta",
+      "accountName": "Ej. Mi Cuenta de Ahorros",
+      "selectBank": "Seleccionar banco",
+      "accountNumber": "****1234",
+      "selectColor": "Seleccionar color",
+      "notes": "Información adicional sobre esta cuenta..."
+    },
+    
+    "validation": {
+      "accountNameRequired": "Por favor ingresa un nombre para la cuenta",
+      "accountTypeRequired": "Por favor selecciona el tipo de cuenta",
+      "bankRequired": "Por favor selecciona el banco",
+      "colorRequired": "Por favor selecciona un color para la cuenta",
+      "validBalanceRequired": "Por favor ingresa un saldo inicial válido"
+    },
+    
+    "preview": {
+      "balance": "Saldo"
+    },
+    
+    "modals": {
+      "accountType": "Tipo de Cuenta",
+      "selectBank": "Seleccionar Banco",
+      "selectColor": "Seleccionar Color"
+    },
+    
+    "delete": {
+      "title": "Eliminar Cuenta",
+      "message": "¿Estás seguro de que deseas eliminar esta cuenta? Esta acción no se puede deshacer.",
+      "confirm": "Eliminar",
+      "successTitle": "Cuenta Eliminada",
+      "successMessage": "La cuenta ha sido eliminada correctamente"
+    },
+    
+    "success": {
+      "accountUpdated": "Cuenta actualizada correctamente"
+    },
+    
+    "errors": {
+      "userInfoNotFound": "No se pudo obtener la información del usuario del token",
+      "userTokenNotFound": "Token de usuario no encontrado",
+      "tokenProcessError": "Error al procesar el token de usuario",
+      "loadInitialData": "No se pudieron cargar los datos necesarios",
+      "updateInfoMissing": "No se pudo obtener la información necesaria para actualizar la cuenta",
+      "updateAccountFailed": "Error al actualizar la cuenta",
+      "updateAccountGeneric": "No se pudo actualizar la cuenta. Por favor, intenta de nuevo.",
+      "accountIdNotFound": "No se pudo obtener el ID de la cuenta",
+      "deleteAccountFailed": "Error al eliminar la cuenta",
+      "deleteAccountGeneric": "No se pudo eliminar la cuenta. Por favor, intenta de nuevo.",
+      "serverError": "Error del servidor",
+      "communicationError": "Error de comunicación con el servidor. Verifica tu conexión.",
+      "connectionError": "Error de conexión. Verifica tu conexión a internet.",
+      "networkError": "Error de red. Verifica que el servidor esté disponible."
+    },
+    
+    "loading": {
+      "user": "Cargando usuario...",
+      "accountData": "Cargando datos de la cuenta..."
+    }
+  },
+   "editProfile": {
+    "title": "Editar Perfil",
+    
+    "sections": {
+      "personalInfo": "Información Personal",
+      "changePassword": "Cambiar Contraseña",
+      "passwordInstructions": "Deja estos campos vacíos si no quieres cambiar tu contraseña"
+    },
+    
+    "fields": {
+      "fullName": "Nombre Completo",
+      "username": "Nombre de Usuario",
+      "email": "Correo Electrónico",
+      "currentPassword": "Contraseña Actual",
+      "newPassword": "Nueva Contraseña",
+      "confirmPassword": "Confirmar Nueva Contraseña"
+    },
+    
+    "placeholders": {
+      "fullName": "Ingresa tu nombre completo",
+      "username": "Ingresa tu nombre de usuario",
+      "email": "Ingresa tu correo electrónico",
+      "currentPassword": "Ingresa tu contraseña actual",
+      "newPassword": "Ingresa tu nueva contraseña (mín. 6 caracteres)",
+      "confirmPassword": "Confirma tu nueva contraseña"
+    },
+    
+    "validation": {
+      "nameRequired": "El nombre es obligatorio",
+      "usernameRequired": "El nombre de usuario es obligatorio",
+      "invalidEmail": "El formato del correo electrónico no es válido",
+      "currentPasswordRequired": "Debes ingresar tu contraseña actual para cambiarla",
+      "passwordMinLength": "La nueva contraseña debe tener al menos 6 caracteres",
+      "passwordsNoMatch": "Las contraseñas nuevas no coinciden"
+    },
+    
+    "actions": {
+      "saveChanges": "Guardar Cambios"
+    },
+    
+    "info": {
+      "requiredFields": "Los campos marcados con (*) son obligatorios. Tu información se mantendrá segura y privada."
+    },
+    
+    "success": {
+      "profileUpdated": "Perfil actualizado correctamente"
+    },
+    
+    "errors": {
+      "tokenNotFound": "No se encontró token de autenticación",
+      "invalidToken": "Token inválido: ID de usuario no encontrado",
+      "loadProfileFailed": "No se pudo cargar la información del perfil.",
+      "sessionExpired": "Sesión expirada. Por favor, inicia sesión nuevamente.",
+      "noPermissions": "No tienes permisos para acceder a esta información.",
+      "userNotFound": "Usuario no encontrado.",
+      "connectionError": "Error de conexión. Verifica tu internet.",
+      "basicDataOnly": "Solo se muestran datos básicos.",
+      "updateProfileGeneric": "No se pudo actualizar el perfil. Inténtalo de nuevo."
+    },
+    
+    "loading": {
+      "profileInfo": "Cargando información del perfil...",
+      "saving": "Cargando..."
+    }
+  },
+  
+
   "transfer": {
     "title": "Transferir",
     "newTransaction": "Nueva Transacción",
